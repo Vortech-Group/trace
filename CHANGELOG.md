@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-trace` will be documented in this file
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-10-13
 
 Initial release.
 
@@ -19,4 +19,5 @@ Initial release.
 - `TraceSyncJob` with one active run per connection + feed + model (atomic cache lock), retries for timeouts, 429 and 5xx only
 - `SyncStarted`, `SyncCompleted`, `SyncFailed` events, structured logs without record values
 - `trace:install`, `trace:make-source`, `trace:make-mapper`, `trace:sync` (`--queue`, `--full`), `trace:doctor`, `trace:prune`
+- `trace:install` asks which side(s) to prepare (Laravel Prompts) when neither `--source` nor `--remote` is given; non-interactive runs still need a flag
 - Enum helpers `is()`, `isNot()`, `in()`, `notIn()`

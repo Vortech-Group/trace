@@ -51,10 +51,13 @@ composer require vortech/laravel-trace
 The service provider and the `Remote` facade are registered through package discovery. Then prepare the side(s) the application plays:
 
 ```bash
+php artisan trace:install            # asks which side(s) this application plays
 php artisan trace:install --source   # publishes the config and the source migration
 php artisan trace:install --remote   # publishes the config and the remote migration
 php artisan migrate
 ```
+
+Without a flag the command shows a prompt where you pick Source, Remote or both. In a non-interactive run (`--no-interaction`, CI) a flag is required.
 
 Use `--force` to overwrite an existing config file. The tags `trace-config`, `trace-source-migrations` and `trace-remote-migrations` are also available through `vendor:publish`.
 
@@ -219,7 +222,7 @@ Per record: find the link; without one, try `match()` (no hit creates a record, 
 ## Artisan
 
 ```bash
-php artisan trace:install --source|--remote [--force]
+php artisan trace:install [--source] [--remote] [--force]   # no flag: asks which side
 php artisan trace:make-source ClinicSource
 php artisan trace:make-mapper ClinicMapper
 php artisan trace:sync 'App\Models\Clinic'
