@@ -219,6 +219,32 @@ Per record: find the link; without one, try `match()` (no hit creates a record, 
 
 `TraceSyncJob` carries only scalars (model class, mode, flags). One run is active per connection + feed + local model, enforced by an atomic cache lock for `run()` and the queue alike; a job that finds a running sync leaves the work to it. Timeouts, `429` and `5xx` are retried with backoff (`trace.remote.retries`); `401`, `403`, schema, mapping and data errors are not. The job timeout is derived from `trace.remote.lock_ttl`.
 
+## Multiple sources
+
+A remote application can pull from more than one source installation. Name the extra sources in `config/trace.php` and point a model at one of them:
+
+```php
+// config/trace.php
+'remote' => [
+    'default' => ['url' => env('TRACE_REMOTE_URL'), 'token' => env('TRACE_REMOTE_TOKEN')],
+    'connections' => [
+        'hospital' => ['url' => env('HOSPITAL_TRACE_URL'), 'token' => env('HOSPITAL_TRACE_TOKEN')],
+    ],
+],
+```
+
+```php
+#[Sync(source: 'clinics', mapper: ClinicMapper::class)]                          // the default source
+class Clinic extends Model { use SoftDeletes; }
+
+#[Sync(source: 'doctors', mapper: DoctorMapper::class, connection: 'hospital')]  // another installation
+class Doctor extends Model { use SoftDeletes; }
+```
+
+Every model keeps its own state (cursor, bootstrap position, schema hash), its own run lock and its own `instance_id` check, and links carry the `instance_id`, so identical keys of two sources never mix. Use as many named connections as you need, `Remote::for()` and the commands work the same.
+
+One model has one source: `#[Sync]` is not repeatable and `Remote::for()` takes no connection. To receive the same table from two installations, declare a model per source.
+
 ## Artisan
 
 ```bash
@@ -258,7 +284,7 @@ Schedule::command('trace:prune')->daily();   // on the source
 | `source.snapshot_cursor_ttl` | Minutes a snapshot cursor stays valid |
 | `source.forbidden_fields` | Fields no Source may publish |
 | `remote.default` | `url` and `token` of the default source |
-| `remote.connections` | Named sources for `#[Sync(connection: 'hospital')]` |
+| `remote.connections` | Named sources for `#[Sync(connection: 'hospital')]`, see [Multiple sources](#multiple-sources) |
 | `remote.models` | Extra models for `trace:doctor` |
 | `remote.timeout`, `retries`, `queue`, `lock_ttl`, `runs_retention_days` | HTTP and queue behaviour |
 | `safety` | `require_soft_deletes`, `max_missing_deletion_ratio`, `min_records_for_ratio_guard` |

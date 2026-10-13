@@ -13,7 +13,7 @@ Initial release.
 - `#[Traceable]` marker and one synchronous wildcard Eloquent listener, no trait and no observer; force delete and restore are normalised to one log row
 - Commit ordered change stream: `trace_streams` row lock + `trace_changes`, fail loudly inside a transaction, best effort (reported) outside of one, fail fast on a second connection
 - Keyset paginated snapshot with a stable watermark, state convergence change feed with tombstones, signed opaque cursors, `410 cursor_expired` after retention (`trace:prune`)
-- Remote side: `#[Sync]`, `Mapper` (`fields()`, `match()`, `transform()`), `trace_links` instead of a `remote_id` column, `Remote::for(Model::class)->sync()->run()|dispatch()`, `->reconcile()`
+- Remote side: several sources through named `trace.remote.connections` and `#[Sync(connection: ...)]`; `#[Sync]`, `Mapper` (`fields()`, `match()`, `transform()`), `trace_links` instead of a `remote_id` column, `Remote::for(Model::class)->sync()->run()|dispatch()`, `->reconcile()`
 - Resumable bootstrap with page checkpoints, catch-up from the watermark, incremental sync where every page commits records, links and cursor together, idempotent soft delete / restore
 - Full reconcile with presence marking, a deletion guard (ratio + explicit override) and hard failures on a changed `instance_id`
 - `TraceSyncJob` with one active run per connection + feed + model (atomic cache lock), retries for timeouts, 429 and 5xx only
