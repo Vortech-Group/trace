@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="t">
+  <title id="t">Laravel Trace by Vortech</title>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".04"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="400" fill="#08090a"/>
+  <rect width="1280" height="400" fill="url(#grid)"/>
+  <rect x="0" y="0" width="6" height="400" fill="#CF000F"/>
+
+  <g font-family="Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="80" y="128" fill="#8b8c8a" font-size="18" font-weight="600" letter-spacing="4">VORTECH  /  LARAVEL PACKAGE</text>
+    <text x="80" y="212" fill="#f4f4f2" font-size="72" font-weight="800" letter-spacing="-2">Laravel <tspan fill="#CF000F">Trace</tspan></text>
+    <text x="80" y="266" fill="#8b8c8a" font-size="24">One-way, change-based sync of</text>
+    <text x="80" y="300" fill="#8b8c8a" font-size="24">Eloquent data between apps.</text>
+  </g>
+
+  <!-- code mock -->
+  <g transform="translate(750,56)" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="16">
+    <rect width="470" height="288" rx="12" fill="#0c0d0e" stroke="#575856" stroke-opacity=".6"/>
+    <rect width="470" height="40" rx="12" fill="#ffffff" fill-opacity=".04"/>
+    <circle cx="24" cy="20" r="5" fill="#575856"/>
+    <circle cx="42" cy="20" r="5" fill="#575856"/>
+    <circle cx="60" cy="20" r="5" fill="#575856"/>
+
+    <text x="24" y="84" fill="#8b8c8a">Remote::<tspan fill="#f4f4f2">for</tspan>(<tspan fill="#CF000F">Clinic</tspan>::class)</text>
+    <text x="48" y="108" fill="#8b8c8a">-&gt;<tspan fill="#f4f4f2">sync</tspan>()</text>
+    <text x="48" y="132" fill="#8b8c8a">-&gt;<tspan fill="#f4f4f2">onQueue</tspan>(<tspan fill="#CF000F">'integrations'</tspan>)</text>
+    <text x="48" y="156" fill="#8b8c8a">-&gt;<tspan fill="#f4f4f2">dispatch</tspan>();</text>
+
+    <line x1="24" y1="188" x2="446" y2="188" stroke="#575856" stroke-opacity=".5" stroke-width="2"/>
+
+    <text x="24" y="222" fill="#8b8c8a" font-size="14">clinics  v1042</text>
+    <text x="220" y="222" fill="#8b8c8a" font-size="14"><tspan fill="#575856">cursor</tspan>  →  <tspan fill="#CF000F">v1043</tspan></text>
+
+    <rect x="24" y="238" width="104" height="26" rx="13" fill="#CF000F"/>
+    <text x="76" y="256" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">2 updated</text>
+    <rect x="140" y="238" width="104" height="26" rx="13" fill="none" stroke="#575856"/>
+    <text x="192" y="256" text-anchor="middle" fill="#8b8c8a" font-size="14" font-weight="700">1 created</text>
+    <rect x="256" y="238" width="104" height="26" rx="13" fill="none" stroke="#575856"/>
+    <text x="308" y="256" text-anchor="middle" fill="#8b8c8a" font-size="14" font-weight="700">1 deleted</text>
+  </g>
+</svg>

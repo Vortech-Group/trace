@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - database
+    tmpDir: .phpstan.cache
+    # sources, mappers and payloads are user supplied: the runtime validation is not redundant
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Eloquent Builder forwards to the query builder; strict-rules misreads these as static calls
+        -
+            identifier: staticMethod.dynamicCall
+            message: '#Eloquent\\Builder<#'

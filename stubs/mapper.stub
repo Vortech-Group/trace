@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Vortech\Trace\Mapper;
+
+final class {{ class }} extends Mapper
+{
+    public function fields(): array
+    {
+        return [
+            'name',
+            // 'remote_name' => 'local_column',
+        ];
+    }
+
+    // public function match(): array
+    // {
+    //     return ['code' => 'clinic_code'];
+    // }
+}

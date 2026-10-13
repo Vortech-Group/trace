@@ -1,0 +1,64 @@
+name: Concurrency
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: concurrency-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    name: ${{ matrix.database }} row locks
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [mysql, pgsql]
+
+    services:
+      mysql:
+        image: ${{ matrix.database == 'mysql' && 'mysql:8.0' || '' }}
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: trace_test
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=5s --health-retries=10
+
+      postgres:
+        image: ${{ matrix.database == 'pgsql' && 'postgres:16' || '' }}
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: trace_test
+        ports: ['5432:5432']
+        options: --health-cmd="pg_isready" --health-interval=5s --health-timeout=5s --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, pdo_mysql, pdo_pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run the concurrency tests
+        env:
+          TRACE_TEST_DB: ${{ matrix.database }}
+          TRACE_TEST_HOST: 127.0.0.1
+          TRACE_TEST_DATABASE: trace_test
+          TRACE_TEST_USERNAME: ${{ matrix.database == 'mysql' && 'root' || 'postgres' }}
+          TRACE_TEST_PASSWORD: secret
+        run: vendor/bin/pest tests/Concurrency
