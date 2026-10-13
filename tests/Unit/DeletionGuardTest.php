@@ -10,23 +10,23 @@ beforeEach(function (): void {
 });
 
 it('lets a small share of vanished records through', function (): void {
-    new DeletionGuard()->check(1000, 200, false);
+    (new DeletionGuard)->check(1000, 200, false);
 
     expect(true)->toBeTrue();
 });
 
 it('refuses a large share', function (): void {
-    expect(fn () => new DeletionGuard()->check(1000, 201, false))->toThrow(DeletionGuardException::class);
+    expect(fn () => (new DeletionGuard)->check(1000, 201, false))->toThrow(DeletionGuardException::class);
 });
 
 it('does not guard small data sets', function (): void {
-    new DeletionGuard()->check(99, 99, false);
+    (new DeletionGuard)->check(99, 99, false);
 
     expect(true)->toBeTrue();
 });
 
 it('accepts an explicit override', function (): void {
-    new DeletionGuard()->check(1000, 900, true);
+    (new DeletionGuard)->check(1000, 900, true);
 
     expect(true)->toBeTrue();
 });

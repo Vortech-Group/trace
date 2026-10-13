@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Console;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -15,13 +13,15 @@ use Vortech\Trace\TraceServiceProvider;
 
 use function Laravel\Prompts\multiselect;
 
-#[Signature('trace:install
-    {--source : Prepare this application to publish data}
-    {--remote : Prepare this application to receive data}
-    {--force : Overwrite the existing configuration file}')]
-#[Description('Publish the Trace configuration and migrations for the source and/or the remote side')]
 final class InstallCommand extends Command
 {
+    protected $signature = 'trace:install
+    {--source : Prepare this application to publish data}
+    {--remote : Prepare this application to receive data}
+    {--force : Overwrite the existing configuration file}';
+
+    protected $description = 'Publish the Trace configuration and migrations for the source and/or the remote side';
+
     /**
      * @throws Throwable
      */

@@ -21,9 +21,9 @@ function sourceWith(string $model, array $fields): Source
 }
 
 it('accepts a valid source', function (): void {
-    new ProductSource()->validate();
+    (new ProductSource)->validate();
 
-    expect(new ProductSource()->fields())->toContain('code', 'name');
+    expect((new ProductSource)->fields())->toContain('code', 'name');
 });
 
 it('refuses an invalid source', function (string $model, array $fields, string $message): void {
@@ -42,7 +42,7 @@ it('refuses an invalid source', function (string $model, array $fields, string $
 it('never puts unlisted attributes into the payload', function (): void {
     $product = makeProduct(['internal_note' => 'secret', 'name' => 'Central']);
 
-    $attributes = new ProductSource()->attributesFor($product);
+    $attributes = (new ProductSource)->attributesFor($product);
 
     expect(array_keys($attributes))->toBe(['code', 'name', 'description', 'barcode', 'slug', 'brand', 'category', 'is_active'])
         ->and($attributes)->not->toHaveKey('internal_note')

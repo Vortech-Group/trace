@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-trace` will be documented in this file
 
+## 0.4.1 - 2026-10-13
+
+### Changed
+
+- PHP 8.3 and Laravel 12 are supported next to PHP 8.4+ and Laravel 13; the suite and PHPStan run on all of them in CI. The code no longer uses PHP 8.4 only syntax (`new X()->method()`), and the Artisan commands declare `$signature` and `$description` instead of the Laravel 13 attributes. The dry run no longer relies on the return type of `Model::withoutEvents()`, which differs between Laravel 12 and 13
+
 ## 0.4.0 - 2026-10-13
 
 ### Added

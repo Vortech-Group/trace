@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Console;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Throwable;
 use Vortech\Trace\Facades\Remote;
 
-#[Signature('trace:sync
+final class SyncCommand extends Command
+{
+    protected $signature = 'trace:sync
     {model : The fully qualified class name of the model}
     {--queue : Dispatch the sync to the queue instead of running it now}
     {--full : Reconcile the complete state instead of only pulling the changes}
     {--allow-mass-deletion : Allow a reconcile to soft delete more than the configured share of records}
-    {--dry-run : Read the source and show what the run would do, write nothing}')]
-#[Description('Synchronize a #[Sync] model with its source')]
-final class SyncCommand extends Command
-{
+    {--dry-run : Read the source and show what the run would do, write nothing}';
+
+    protected $description = 'Synchronize a #[Sync] model with its source';
+
     public function handle(): int
     {
         $model = $this->argument('model');

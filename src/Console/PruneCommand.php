@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Console;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -15,10 +13,12 @@ use Vortech\Trace\Models\TraceStream;
 use Vortech\Trace\Models\TraceSyncRun;
 use Vortech\Trace\Support\TraceConfig;
 
-#[Signature('trace:prune')]
-#[Description('Remove change log rows and sync runs past their retention')]
 final class PruneCommand extends Command
 {
+    protected $signature = 'trace:prune';
+
+    protected $description = 'Remove change log rows and sync runs past their retention';
+
     /**
      * @throws Throwable
      */

@@ -91,7 +91,7 @@ final readonly class ChangeFeedReader
                 'feed' => $feed,
                 'schema_hash' => $source->schemaHash($feed),
                 'watermark' => (string) $current,
-                'next_cursor' => new Cursor(CursorType::Changes, $feed, $instanceId, $next)->encode(),
+                'next_cursor' => (new Cursor(CursorType::Changes, $feed, $instanceId, $next))->encode(),
                 'has_more' => $hasMore,
             ],
         ];

@@ -38,7 +38,7 @@ function productPayload(array $override = []): array
 }
 
 it('keeps equal names and renames the others', function (): void {
-    $mapped = new AttributeMapper()->map(new ProductMapper, productPayload());
+    $mapped = (new AttributeMapper)->map(new ProductMapper, productPayload());
 
     expect($mapped)->toHaveKeys(['name', 'ean', 'active'])
         ->and($mapped)->not->toHaveKeys(['barcode', 'is_active', 'code'])
@@ -47,11 +47,11 @@ it('keeps equal names and renames the others', function (): void {
 });
 
 it('runs transform() on local column names', function (): void {
-    expect(new AttributeMapper()->map(new ProductMapper, productPayload())['slug'])->toBe('info-slug');
+    expect((new AttributeMapper)->map(new ProductMapper, productPayload())['slug'])->toBe('info-slug');
 });
 
 it('treats a sent null as a value', function (): void {
-    $mapped = new AttributeMapper()->map(new ProductMapper, productPayload(['barcode' => null, 'slug' => null]));
+    $mapped = (new AttributeMapper)->map(new ProductMapper, productPayload(['barcode' => null, 'slug' => null]));
 
     expect($mapped)->toHaveKey('ean', null)
         ->and($mapped)->toHaveKey('slug', null);
@@ -61,12 +61,12 @@ it('treats a missing attribute as a schema error, never as null', function (): v
     $payload = productPayload();
     unset($payload['barcode']);
 
-    expect(fn () => new AttributeMapper()->map(new ProductMapper, $payload))
+    expect(fn () => (new AttributeMapper)->map(new ProductMapper, $payload))
         ->toThrow(SchemaMismatchException::class, 'barcode');
 });
 
 it('refuses a transform() that adds a column outside the whitelist', function (): void {
-    expect(fn () => new AttributeMapper()->map(new \SloppyMapper, ['name' => 'x']))
+    expect(fn () => (new AttributeMapper)->map(new \SloppyMapper, ['name' => 'x']))
         ->toThrow(InvalidMappingException::class, 'is_admin');
 });
 
@@ -79,6 +79,6 @@ it('builds the match values from the remote attributes and skips nulls', functio
 });
 
 it('exposes the normalised mapping', function (): void {
-    expect(new ProductMapper()->mapping())->toMatchArray(['name' => 'name', 'barcode' => 'ean', 'is_active' => 'active'])
-        ->and(new ProductMapper()->localColumns())->toContain('ean', 'name');
+    expect((new ProductMapper)->mapping())->toMatchArray(['name' => 'name', 'barcode' => 'ean', 'is_active' => 'active'])
+        ->and((new ProductMapper)->localColumns())->toContain('ean', 'name');
 });

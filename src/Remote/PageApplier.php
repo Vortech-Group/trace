@@ -23,7 +23,7 @@ final readonly class PageApplier
      */
     public function apply(SyncContext $context, FeedPage $page, ?Closure $withPage = null): void
     {
-        new TraceLink()->getConnection()->transaction(function () use ($context, $page, $withPage): void {
+        (new TraceLink)->getConnection()->transaction(function () use ($context, $page, $withPage): void {
             foreach ($page->records as $record) {
                 $this->records->apply($context, $record);
             }

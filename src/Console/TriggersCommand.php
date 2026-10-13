@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Console;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Throwable;
 use Vortech\Trace\Capture\TriggerDefinition;
 use Vortech\Trace\Capture\TriggerManager;
 use Vortech\Trace\Enums\TriggerStatus;
 
-#[Signature('trace:triggers {action=status : install, remove or status} {--model=* : A model class to include besides the registered feeds} {--sql : Print the statements instead of running them}')]
-#[Description('Install, remove or inspect the database triggers of the models that use CaptureMode::Database')]
 final class TriggersCommand extends Command
 {
+    protected $signature = 'trace:triggers {action=status : install, remove or status} {--model=* : A model class to include besides the registered feeds} {--sql : Print the statements instead of running them}';
+
+    protected $description = 'Install, remove or inspect the database triggers of the models that use CaptureMode::Database';
+
     /**
      * @throws Throwable
      */

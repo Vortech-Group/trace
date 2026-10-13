@@ -336,7 +336,7 @@ describe('health', function (): void {
 });
 
 it('reads a stored cursor for display without trusting it', function (): void {
-    $token = new Cursor(CursorType::Changes, 'products', 'instance', 42)->encode();
+    $token = (new Cursor(CursorType::Changes, 'products', 'instance', 42))->encode();
 
     expect(Cursor::peek($token))->toBe(['type' => 'changes', 'version' => 42, 'lastKey' => null])
         ->and(Cursor::peek(null))->toBeNull()

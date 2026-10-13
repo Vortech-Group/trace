@@ -146,7 +146,7 @@ final readonly class SnapshotRunner
         $this->guard->check($links()->count(), count($missing), $override);
 
         foreach (array_chunk($missing, 100) as $keys) {
-            new TraceLink()->getConnection()->transaction(function () use ($definition, $keyName, $keys, $context): void {
+            (new TraceLink)->getConnection()->transaction(function () use ($definition, $keyName, $keys, $context): void {
                 foreach ($definition->newModel()->newQuery()->whereIn($keyName, $keys)->get() as $model) {
                     $model->delete();
                     $context->tally->deleted++;

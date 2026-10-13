@@ -26,7 +26,7 @@ final readonly class ChangeRecorder
      */
     public function record(Model $model, ChangeType $type): void
     {
-        $connection = new TraceStream()->getConnection();
+        $connection = (new TraceStream)->getConnection();
 
         throw_if(
             condition: $model->getConnection()->getName() !== $connection->getName(),

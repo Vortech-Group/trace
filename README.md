@@ -7,7 +7,7 @@
   <a href="https://packagist.org/packages/vortech/laravel-trace"><img src="https://img.shields.io/packagist/v/vortech/laravel-trace?style=flat-square&color=CF000F&labelColor=08090A" alt="Latest version"></a>
   <a href="https://packagist.org/packages/vortech/laravel-trace"><img src="https://img.shields.io/packagist/dt/vortech/laravel-trace?style=flat-square&color=8B8C8A&labelColor=08090A" alt="Downloads"></a>
   <a href="https://packagist.org/packages/vortech/laravel-trace"><img src="https://img.shields.io/packagist/php-v/vortech/laravel-trace?style=flat-square&color=8B8C8A&labelColor=08090A" alt="PHP version"></a>
-  <img src="https://img.shields.io/badge/laravel-13%2B-CF000F?style=flat-square&labelColor=08090A" alt="Laravel 13+">
+  <img src="https://img.shields.io/badge/laravel-12%20%7C%2013-CF000F?style=flat-square&labelColor=08090A" alt="Laravel 12 | 13">
   <a href="LICENSE.md"><img src="https://img.shields.io/packagist/l/vortech/laravel-trace?style=flat-square&color=8B8C8A&labelColor=08090A" alt="License"></a>
 </p>
 
@@ -37,8 +37,8 @@ Copying data between two applications usually ends in a nightly full export, or 
 
 ## Requirements
 
-- PHP 8.4+
-- Laravel 13+
+- PHP 8.3+
+- Laravel 12 or 13
 - On the remote: a cache store with atomic locks (redis, database, file, memcached) and a queue for `dispatch()`
 - MySQL 8+, PostgreSQL (SQLite for development and the basic test suite)
 

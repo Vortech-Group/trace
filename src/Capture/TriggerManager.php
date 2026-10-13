@@ -65,7 +65,7 @@ final readonly class TriggerManager
 
         $instance = new $model;
         $connection = $instance->getConnection();
-        $trace = new TraceStream()->getConnection();
+        $trace = (new TraceStream)->getConnection();
 
         throw_if(
             condition: $connection->getName() !== $trace->getName(),

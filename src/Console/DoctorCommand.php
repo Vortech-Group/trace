@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Console;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Vortech\Trace\Enums\CheckStatus;
 use Vortech\Trace\Health\Check;
 use Vortech\Trace\Health\HealthChecker;
 
-#[Signature('trace:doctor {--offline : Skip the request to the source}')]
-#[Description('Validate the Trace setup of the source and the remote side')]
 final class DoctorCommand extends Command
 {
+    protected $signature = 'trace:doctor {--offline : Skip the request to the source}';
+
+    protected $description = 'Validate the Trace setup of the source and the remote side';
+
     public function handle(HealthChecker $health): int
     {
         $this->components->twoColumnDetail('<fg=gray>Check</>', '<fg=gray>Result</>');

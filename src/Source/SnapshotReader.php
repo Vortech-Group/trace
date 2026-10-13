@@ -62,7 +62,7 @@ final readonly class SnapshotReader
                 'schema_hash' => $source->schemaHash($feed),
                 'watermark' => (string) $watermark,
                 'next_cursor' => $hasMore && $last instanceof Model
-                    ? new Cursor(CursorType::Snapshot, $feed, $instanceId, $watermark, $source->keyOf($last), now()->getTimestamp() + TraceConfig::snapshotCursorTtl() * 60)->encode()
+                    ? (new Cursor(CursorType::Snapshot, $feed, $instanceId, $watermark, $source->keyOf($last), now()->getTimestamp() + TraceConfig::snapshotCursorTtl() * 60))->encode()
                     : null,
                 'has_more' => $hasMore,
             ],

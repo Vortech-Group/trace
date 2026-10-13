@@ -172,7 +172,7 @@ final readonly class HealthChecker
         );
 
         $connection = $source->newModel()->getConnection()->getName();
-        $traceConnection = new TraceStream()->getConnection()->getName();
+        $traceConnection = (new TraceStream)->getConnection()->getName();
 
         throw_if(
             condition: $connection !== $traceConnection,
@@ -240,7 +240,7 @@ final readonly class HealthChecker
             exception: new RuntimeException('Missing local columns: '.implode(', ', $missing)),
         );
 
-        $traceConnection = new TraceSyncState()->getConnection()->getName();
+        $traceConnection = (new TraceSyncState)->getConnection()->getName();
         throw_if(
             condition: $model->getConnection()->getName() !== $traceConnection,
             exception: new RuntimeException('The model is not on the trace connection, a page cannot commit atomically.'),

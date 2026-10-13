@@ -6,6 +6,7 @@ namespace Vortech\Trace\Remote;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
+use LogicException;
 use Throwable;
 use Vortech\Trace\Data\SyncContext;
 use Vortech\Trace\Data\SyncDefinition;
@@ -60,14 +61,20 @@ final readonly class SyncEngine
      */
     private function rehearse(SyncDefinition $definition, SyncRequest $request): SyncResult
     {
-        $connection = new TraceSyncState()->getConnection();
+        $connection = (new TraceSyncState)->getConnection();
         $connection->beginTransaction();
 
+        $result = null;
+
         try {
-            return Model::withoutEvents(fn (): SyncResult => $this->execute($definition, $request));
+            Model::withoutEvents(function () use ($definition, $request, &$result): void {
+                $result = $this->execute($definition, $request);
+            });
         } finally {
             $connection->rollBack();
         }
+
+        return $result ?? throw new LogicException('The rehearsal produced no result.');
     }
 
     /**
