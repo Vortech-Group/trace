@@ -330,9 +330,16 @@ $state->status->in(SyncStatus::Failed, SyncStatus::ReconcileRequired);
 - **Deploys.** The listener also logs writes from queue workers, CLI and cron. Restart long-running workers on the source after a deployment.
 - **Page size and memory.** A page is applied in one transaction, keep `page_size` reasonable for wide tables.
 
-## Not in 0.1
+## Future ideas
 
-Two-way sync, conflict merging, a dashboard, a generic adapter for arbitrary remote APIs, relation graphs (only scalar columns are mapped), composite primary keys, and database triggers or binlog/WAL capture.
+Not available yet, and not promised, but candidates for later releases:
+
+- Relation support: mapping remote foreign keys to local ones (today only scalar columns are mapped)
+- Database level change capture (triggers, binlog/WAL) for lossless tracking of writes that fire no model event
+- Composite primary keys
+- Two-way synchronization with conflict handling
+- A dashboard
+- A generic adapter for arbitrary remote APIs
 
 ## Testing
 
