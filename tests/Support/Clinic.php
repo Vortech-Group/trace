@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Vortech\Trace\Attributes\Traceable;
 
-#[Traceable]
+#[Traceable(source: ClinicSource::class)]
 final class Clinic extends Model
 {
     use SoftDeletes;

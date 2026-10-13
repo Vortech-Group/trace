@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Vortech\Trace\Source;
+use Vortech\Trace\Tests\Support\Clinic;
 use Vortech\Trace\Tests\Support\ClinicSource;
 use Vortech\Trace\TraceServiceProvider;
 
@@ -49,6 +50,7 @@ abstract class TestCase extends Orchestra
         $router->prefix('api')->group(function (): void {
             $router = app(Router::class);
             $router->source('clinics', ClinicSource::class);
+            $router->source('clinics-by-model', Clinic::class);
         });
     }
 

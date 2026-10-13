@@ -102,6 +102,17 @@ Route::source('clinics', ClinicSource::class);
 // GET /api/clinics/changes   what changed after a cursor
 ```
 
+Optionally let the model name its source, then the route can take the model:
+
+```php
+#[Traceable(source: ClinicSource::class)]
+class Clinic extends Model { use SoftDeletes; }
+
+Route::source('clinics', Clinic::class);   // same feed as above
+```
+
+Naming the Source class stays possible, and is the way to publish one model through several feeds with different field lists. A model without `source:` (or one whose source publishes another model) is refused when the route is registered.
+
 Write through transactions, so a change and its log row commit or roll back together:
 
 ```php
