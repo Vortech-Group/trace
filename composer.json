@@ -27,7 +27,8 @@
         "illuminate/http": "^13.0",
         "illuminate/queue": "^13.0",
         "illuminate/routing": "^13.0",
-        "illuminate/support": "^13.0"
+        "illuminate/support": "^13.0",
+        "laravel/prompts": "^0.3.11"
     },
     "require-dev": {
         "larastan/larastan": "^3.13",

@@ -13,6 +13,8 @@ use Throwable;
 use Vortech\Trace\Source\InstanceId;
 use Vortech\Trace\TraceServiceProvider;
 
+use function Laravel\Prompts\multiselect;
+
 #[Signature('trace:install
     {--source : Prepare this application to publish data}
     {--remote : Prepare this application to receive data}
@@ -27,6 +29,18 @@ final class InstallCommand extends Command
     {
         $source = $this->option('source') === true;
         $remote = $this->option('remote') === true;
+
+        if (! $source && ! $remote && $this->input->isInteractive()) {
+            $sides = multiselect(
+                label: 'Which side does this application play?',
+                options: ['source' => 'Source: publishes its data', 'remote' => 'Remote: receives data from a source'],
+                required: true,
+                hint: 'Space selects, enter confirms. Pick both if it does both.',
+            );
+
+            $source = in_array('source', $sides, true);
+            $remote = in_array('remote', $sides, true);
+        }
 
         if (! $source && ! $remote) {
             $this->components->error('Choose a side: --source, --remote or both.');

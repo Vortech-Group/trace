@@ -19,8 +19,17 @@ afterEach(function (): void {
     }
 });
 
-it('asks for a side when installing', function (): void {
-    $this->artisan('trace:install')->assertFailed();
+it('fails without a side when it cannot ask', function (): void {
+    $this->artisan('trace:install', ['--no-interaction' => true])->assertFailed();
+});
+
+it('asks which side to install', function (): void {
+    $this->artisan('trace:install')
+        ->expectsChoice('Which side does this application play?', ['remote'], ['source' => 'Source: publishes its data', 'remote' => 'Remote: receives data from a source'])
+        ->assertSuccessful();
+
+    expect(File::glob(database_path('migrations/*_create_trace_remote_tables.php')))->toHaveCount(1)
+        ->and(File::glob(database_path('migrations/*_create_trace_source_tables.php')))->toHaveCount(0);
 });
 
 it('installs the source side', function (): void {
