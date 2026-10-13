@@ -7,11 +7,13 @@ namespace Vortech\Trace\Tracking;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Throwable;
+use Vortech\Trace\Enums\CaptureMode;
 use Vortech\Trace\Enums\ChangeType;
 
 /**
  * The one wildcard Eloquent listener. It looks at the lifecycle event, then at the
- * #[Traceable] marker of the model, and writes the change log synchronously.
+ * #[Traceable] marker of the model, and writes the change log synchronously. Models
+ * captured by database triggers are skipped: the trigger already wrote their log.
  *
  * `forceDeleted` is ignored on purpose: a force delete fires `deleted` first, so the
  * tombstone is already logged exactly once. A restore saves the model (`updated`) and
@@ -50,7 +52,7 @@ final readonly class TraceableEventListener
             default => null,
         };
 
-        if (filled($type) && $this->registry->isTraceable($model::class)) {
+        if (filled($type) && $this->registry->captureFor($model::class)?->is(CaptureMode::Events) === true) {
             $this->recorder->record($model, $type);
         }
     }

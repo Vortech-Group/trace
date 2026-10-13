@@ -33,7 +33,7 @@ Copying data between two applications usually ends in a nightly full export, or 
 | Source vanishes or is replaced | quietly overwritten | `instance_id` mismatch is a hard failure |
 | `remote_id` column on your table | usually | never, links live in `trace_links` |
 
-> **Trace is not database level CDC.** It follows Eloquent model events. Writes that fire none (mass updates, `DB::table()`, raw SQL, imports) are not logged; a full reconcile repairs them. Delivery is at-least-once with idempotent application, never exactly-once.
+> **By default Trace follows Eloquent model events.** Writes that fire none (mass updates, `DB::table()`, raw SQL, imports) are not logged; a full reconcile repairs them. For lossless tracking, [capture changes with database triggers](#database-capture) instead. Delivery is at-least-once with idempotent application, never exactly-once.
 
 ## Requirements
 
@@ -191,6 +191,30 @@ One synchronous wildcard listener sees `created`, `updated`, `deleted` and `rest
 
 The log stores only the key and `changed` / `deleted`. The API answers with the **current state** of the record, or a `delete` tombstone when it is gone. This is a state-convergence feed, not an event replay: a key may appear more than once in a response and the remote applies it idempotently. A restore is an `upsert`. A force delete fires `deleted` first and is logged exactly once.
 
+### Database capture
+
+Model events miss every write that does not go through a model. Mark the model with `CaptureMode::Database` and the database writes the change log itself:
+
+```php
+use Vortech\Trace\Attributes\Traceable;
+use Vortech\Trace\Enums\CaptureMode;
+
+#[Traceable(source: ClinicSource::class, capture: CaptureMode::Database)]
+class Clinic extends Model { use SoftDeletes; }
+```
+
+```bash
+php artisan trace:triggers install     # also: remove, status, --sql to print the statements
+```
+
+The triggers do what the listener does: lock the `trace_streams` row, bump the version, insert the change, all inside the transaction of the write. The log, the commit order, the API and the remote are unchanged, and a model captured by triggers is skipped by the Eloquent listener, so nothing is logged twice. A soft delete (filling `deleted_at`) is logged as `deleted`, a restore as `changed`.
+
+- Supported on MySQL, MariaDB, PostgreSQL and SQLite. The model must use the connection of the trace tables.
+- Installing needs the `TRIGGER` privilege (MySQL with binary logging also `SUPER`, or `log_bin_trust_function_creators=1`). `--sql` prints the statements, e.g. for a migration your DBA runs.
+- Run `trace:triggers install` again after you change the table, the key or the soft delete column; `trace:doctor` reports missing and outdated triggers.
+- One capturing model per table. Switching a model back to `CaptureMode::Events` needs `trace:triggers remove --model='App\Models\Clinic'` first (the doctor flags a leftover).
+- Every `UPDATE` statement is logged, even one that sets the same values, which is harmless to the idempotent remote. `TRUNCATE` is not seen by any trigger; run a full reconcile after it.
+
 ### The protocol
 
 `GET {feed}/snapshot?limit=500&cursor=...` returns `data[] = {key, attributes}` and `meta = {protocol, instance_id, feed, schema_hash, watermark, next_cursor, has_more}`. Paging is keyset by primary key, never `OFFSET`. The cursor is opaque, HMAC-signed with `app.key`, expires, and carries the watermark taken at the start.
@@ -265,11 +289,12 @@ php artisan trace:make-mapper ClinicMapper
 php artisan trace:sync 'App\Models\Clinic'
 php artisan trace:sync 'App\Models\Clinic' --queue
 php artisan trace:sync 'App\Models\Clinic' --full [--allow-mass-deletion]
+php artisan trace:triggers [install|remove|status] [--model=] [--sql]
 php artisan trace:doctor [--offline]
 php artisan trace:prune
 ```
 
-`trace:doctor` checks the token, tables, source and mapper declarations, columns, connections, the lock-capable cache, the sync state and, unless `--offline`, the source itself (protocol, `instance_id`, schema hash).
+`trace:doctor` checks the token, tables, source and mapper declarations, the capture triggers, columns, connections, the lock-capable cache, the sync state and, unless `--offline`, the source itself (protocol, `instance_id`, schema hash).
 
 ### Scheduling
 
@@ -321,9 +346,9 @@ $state->status->in(SyncStatus::Failed, SyncStatus::ReconcileRequired);
 |---|---|
 | Eloquent model write inside `DB::transaction()` | Atomic: the change and its log row commit or roll back together |
 | Eloquent model write without a transaction | Best effort, with a small crash window between the write and the log. A failed log write is reported, not hidden |
-| `Model::where()->update()`, bulk `delete()`, `DB::table()`, raw SQL, imports | **Not logged.** The next reconcile repairs them |
+| `Model::where()->update()`, bulk `delete()`, `DB::table()`, raw SQL, imports | **Not logged** with model events, the next reconcile repairs them. Logged atomically with [`CaptureMode::Database`](#database-capture) |
 
-- **Reliable tracking needs a model event, lossless tracking needs a transaction.** A full reconcile repairs missed events; it does not replace real database level CDC.
+- **Reliable tracking needs a model event, lossless tracking needs a transaction.** A full reconcile repairs missed events. Use `CaptureMode::Database` when writes bypass models; binlog/WAL based CDC is not part of Trace.
 - **One connection.** The trace tables must live on the connection of the traceable models, and on the remote of the synced models. Anything else fails fast.
 - **Without `match()` and without a link Trace creates a new row.** On a table that already holds the data this duplicates it, so define `match()`.
 - **Retention.** Keep `retention_days` longer than your longest bootstrap and the longest pause between syncs.
@@ -335,7 +360,6 @@ $state->status->in(SyncStatus::Failed, SyncStatus::ReconcileRequired);
 Not available yet, and not promised, but candidates for later releases:
 
 - Relation support: mapping remote foreign keys to local ones (today only scalar columns are mapped)
-- Database level change capture (triggers, binlog/WAL) for lossless tracking of writes that fire no model event
 - Composite primary keys
 - Two-way synchronization with conflict handling
 - A dashboard

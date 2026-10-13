@@ -15,7 +15,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Throwable;
+use Vortech\Trace\Capture\TriggerManager;
+use Vortech\Trace\Enums\CaptureMode;
 use Vortech\Trace\Enums\SyncStatus;
+use Vortech\Trace\Enums\TriggerStatus;
+use Vortech\Trace\Exceptions\TraceException;
 use Vortech\Trace\Models\TraceStream;
 use Vortech\Trace\Models\TraceSyncState;
 use Vortech\Trace\Remote\MapperResolver;
@@ -23,6 +27,7 @@ use Vortech\Trace\Remote\RemoteHttpClient;
 use Vortech\Trace\Source;
 use Vortech\Trace\Source\SourceRegistry;
 use Vortech\Trace\Support\TraceConfig;
+use Vortech\Trace\Tracking\TraceableRegistry;
 
 #[Signature('trace:doctor {--offline : Skip the request to the source}')]
 #[Description('Validate the Trace setup of the source and the remote side')]
@@ -30,11 +35,11 @@ final class DoctorCommand extends Command
 {
     private int $failures = 0;
 
-    public function handle(SourceRegistry $sources, MapperResolver $resolver, RemoteHttpClient $client): int
+    public function handle(SourceRegistry $sources, MapperResolver $resolver, RemoteHttpClient $client, TriggerManager $triggers, TraceableRegistry $traceables): int
     {
         $this->components->twoColumnDetail('<fg=gray>Check</>', '<fg=gray>Result</>');
 
-        $this->checkSource($sources);
+        $this->checkSource($sources, $triggers, $traceables);
         $this->checkRemote($resolver, $client);
 
         if ($this->failures > 0) {
@@ -48,7 +53,7 @@ final class DoctorCommand extends Command
         return self::SUCCESS;
     }
 
-    private function checkSource(SourceRegistry $registry): void
+    private function checkSource(SourceRegistry $registry, TriggerManager $triggers, TraceableRegistry $traceables): void
     {
         $feeds = $registry->all();
         $hasSourceTables = $this->hasTable('trace_streams');
@@ -98,6 +103,37 @@ final class DoctorCommand extends Command
                 );
 
                 return count($source->fields()).' fields';
+            });
+
+            $this->check("Feed [{$feed}] capture", function () use ($class, $triggers, $traceables): string {
+                $model = Source::resolve($class)->model();
+                $mode = $traceables->captureFor($model);
+
+                if ($mode?->is(CaptureMode::Database) === true) {
+                    $definition = $triggers->definitionFor($model);
+                    $status = $triggers->status($definition);
+
+                    throw_if(
+                        condition: $status->isNot(TriggerStatus::Installed),
+                        exception: new RuntimeException("Database triggers are {$status->value}: run php artisan trace:triggers install."),
+                    );
+
+                    return 'database triggers';
+                }
+
+                try {
+                    $definition = $triggers->definitionFor($model);
+                } catch (TraceException) {
+                    return 'model events';
+                }
+
+                // a trigger left behind next to the listener only doubles the log
+                throw_if(
+                    condition: $triggers->isRecorded($definition),
+                    exception: new RuntimeException('Triggers are still installed but the model is captured by events: run php artisan trace:triggers remove --model='.$model),
+                );
+
+                return 'model events';
             });
 
             $this->check("Feed [{$feed}] retention", function () use ($class): string {

@@ -90,6 +90,7 @@ it('reports a failed sync and a bad model with a failure exit code', function ()
 
 it('passes the doctor on a healthy setup', function (): void {
     makeClinic();
+    installTriggers();
     config(['trace.remote.models' => [RemoteClinic::class]]);
 
     $this->artisan('trace:doctor')->expectsOutputToContain('Feed [clinics] is valid')->assertSuccessful();

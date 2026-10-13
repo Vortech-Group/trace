@@ -17,6 +17,7 @@ use Vortech\Trace\Console\MakeMapperCommand;
 use Vortech\Trace\Console\MakeSourceCommand;
 use Vortech\Trace\Console\PruneCommand;
 use Vortech\Trace\Console\SyncCommand;
+use Vortech\Trace\Console\TriggersCommand;
 use Vortech\Trace\Http\Middleware\AuthenticateTraceSource;
 use Vortech\Trace\Remote\MapperResolver;
 use Vortech\Trace\Remote\RemoteManager;
@@ -65,6 +66,7 @@ final class TraceServiceProvider extends ServiceProvider
                 SyncCommand::class,
                 DoctorCommand::class,
                 PruneCommand::class,
+                TriggersCommand::class,
             ]);
         }
     }

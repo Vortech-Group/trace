@@ -2,6 +2,13 @@
 
 All notable changes to `laravel-trace` will be documented in this file
 
+## 0.3.0 - 2026-10-13
+
+### Added
+
+- `#[Traceable(capture: CaptureMode::Database)]` writes the change log with database triggers (MySQL, MariaDB, PostgreSQL, SQLite), so writes that fire no model event (`DB::table()`, mass updates, raw SQL, imports) are logged too, in the transaction of the write and in the same commit order as the Eloquent listener. Models captured by triggers are skipped by the listener
+- `trace:triggers install|remove|status` (`--model`, `--sql`) manages the triggers, `trace:doctor` reports missing, outdated and leftover ones
+
 ## 0.2.0 - 2026-10-13
 
 ### Added

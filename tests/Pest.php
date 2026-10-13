@@ -47,3 +47,9 @@ function reconcileClinics(): SyncResult
 {
     return Remote::for(RemoteClinic::class)->reconcile()->run();
 }
+
+/** Installs the capture triggers of the models that use CaptureMode::Database. */
+function installTriggers(): void
+{
+    test()->artisan('trace:triggers', ['action' => 'install'])->assertSuccessful();
+}

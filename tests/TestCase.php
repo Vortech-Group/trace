@@ -15,6 +15,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use Vortech\Trace\Source;
 use Vortech\Trace\Tests\Support\Clinic;
 use Vortech\Trace\Tests\Support\ClinicSource;
+use Vortech\Trace\Tests\Support\DbClinic;
 use Vortech\Trace\TraceServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -51,6 +52,7 @@ abstract class TestCase extends Orchestra
             $router = app(Router::class);
             $router->source('clinics', ClinicSource::class);
             $router->source('clinics-by-model', Clinic::class);
+            $router->source('db-clinics', DbClinic::class);
         });
     }
 
@@ -67,6 +69,16 @@ abstract class TestCase extends Orchestra
             $table->string('email')->nullable();
             $table->string('city')->nullable();
             $table->string('postal_code')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->string('internal_note')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('db_clinics', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code')->nullable();
+            $table->string('name');
             $table->boolean('is_active')->default(true);
             $table->string('internal_note')->nullable();
             $table->softDeletes();
