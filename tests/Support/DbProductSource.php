@@ -6,9 +6,9 @@ namespace Vortech\Trace\Tests\Support;
 
 use Vortech\Trace\Source;
 
-final class DbClinicSource extends Source
+final class DbProductSource extends Source
 {
-    protected string $model = DbClinic::class;
+    protected string $model = DbProduct::class;
 
     protected array $fields = ['code', 'name', 'is_active'];
 }

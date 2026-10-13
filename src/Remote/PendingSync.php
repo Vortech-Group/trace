@@ -6,6 +6,7 @@ namespace Vortech\Trace\Remote;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\PendingDispatch;
+use LogicException;
 use Throwable;
 use Vortech\Trace\Data\SyncRequest;
 use Vortech\Trace\Data\SyncResult;
@@ -20,6 +21,8 @@ final class PendingSync
     private ?string $connection = null;
 
     private bool $allowMassDeletion = false;
+
+    private bool $dryRun = false;
 
     /**
      * @param  class-string<Model>  $model
@@ -52,6 +55,18 @@ final class PendingSync
     }
 
     /**
+     * Rehearses the run: the source is read and every record applied in a transaction that is rolled back, so the
+     * result tells what the run would create, match, update and delete while nothing is written, no model event
+     * fires and no sync state moves. Only run() can rehearse, a queued job has nowhere to report to.
+     */
+    public function dryRun(bool $dryRun = true): self
+    {
+        $this->dryRun = $dryRun;
+
+        return $this;
+    }
+
+    /**
      * @throws Throwable
      */
     public function run(): SyncResult
@@ -59,8 +74,13 @@ final class PendingSync
         return app(SyncEngine::class)->run($this->request());
     }
 
+    /**
+     * @throws LogicException
+     */
     public function dispatch(): PendingDispatch
     {
+        throw_if($this->dryRun, new LogicException('A dry run cannot be queued: call run() to see its result.'));
+
         $pending = TraceSyncJob::dispatch($this->model, $this->reconcile, $this->allowMassDeletion)
             ->onQueue($this->queue ?? TraceConfig::queue());
 
@@ -69,6 +89,6 @@ final class PendingSync
 
     private function request(): SyncRequest
     {
-        return new SyncRequest($this->model, $this->reconcile, $this->allowMassDeletion);
+        return new SyncRequest($this->model, $this->reconcile, $this->allowMassDeletion, $this->dryRun);
     }
 }

@@ -16,12 +16,12 @@ use Vortech\Trace\Models\TraceLink;
 use Vortech\Trace\Remote\MapperResolver;
 use Vortech\Trace\Remote\SyncEngine;
 use Vortech\Trace\Remote\SyncLock;
-use Vortech\Trace\Tests\Support\RemoteClinic;
+use Vortech\Trace\Tests\Support\RemoteProduct;
 
 it('dispatches a job that carries only scalars', function (): void {
     Queue::fake();
 
-    $pending = Remote::for(RemoteClinic::class)->sync()->dispatch();
+    $pending = Remote::for(RemoteProduct::class)->sync()->dispatch();
 
     expect($pending)->toBeInstanceOf(PendingDispatch::class)->not->toBeInstanceOf(SyncResult::class);
     unset($pending);
@@ -29,7 +29,7 @@ it('dispatches a job that carries only scalars', function (): void {
     Queue::assertPushed(TraceSyncJob::class, function (TraceSyncJob $job): bool {
         $payload = (array) json_decode((string) json_encode(get_object_vars($job)), true);
 
-        return $job->model === RemoteClinic::class
+        return $job->model === RemoteProduct::class
             && collect($payload)->only(['model', 'reconcile', 'allowMassDeletion'])->every(fn ($value): bool => is_scalar($value));
     });
 });
@@ -38,9 +38,9 @@ it('uses the configured queue and honours onQueue and onConnection', function ()
     Queue::fake();
     config(['trace.remote.queue' => 'trace-default']);
 
-    Remote::for(RemoteClinic::class)->sync()->dispatch();
-    Remote::for(RemoteClinic::class)->sync()->onQueue('integrations')->dispatch();
-    Remote::for(RemoteClinic::class)->sync()->onQueue('integrations')->onConnection('redis')->dispatch();
+    Remote::for(RemoteProduct::class)->sync()->dispatch();
+    Remote::for(RemoteProduct::class)->sync()->onQueue('integrations')->dispatch();
+    Remote::for(RemoteProduct::class)->sync()->onQueue('integrations')->onConnection('redis')->dispatch();
 
     Queue::assertPushedOn('trace-default', TraceSyncJob::class);
     Queue::assertPushedOn('integrations', TraceSyncJob::class);
@@ -48,47 +48,47 @@ it('uses the configured queue and honours onQueue and onConnection', function ()
 });
 
 it('syncs when the job runs, and a repeat is harmless', function (): void {
-    makeClinic();
-    makeClinic();
+    makeProduct();
+    makeProduct();
 
-    Remote::for(RemoteClinic::class)->sync()->dispatch();
-    Remote::for(RemoteClinic::class)->sync()->dispatch();
+    Remote::for(RemoteProduct::class)->sync()->dispatch();
+    Remote::for(RemoteProduct::class)->sync()->dispatch();
 
-    expect(RemoteClinic::query()->count())->toBe(2)->and(TraceLink::query()->count())->toBe(2);
+    expect(RemoteProduct::query()->count())->toBe(2)->and(TraceLink::query()->count())->toBe(2);
 });
 
 it('lets only one run be active per model', function (): void {
-    makeClinic();
-    $definition = app(MapperResolver::class)->resolve(RemoteClinic::class);
+    makeProduct();
+    $definition = app(MapperResolver::class)->resolve(RemoteProduct::class);
     $held = Cache::lock(SyncLock::key($definition), 60);
     expect($held->get())->toBeTrue();
 
-    expect(fn () => syncClinics())->toThrow(SyncAlreadyRunningException::class)
-        ->and(RemoteClinic::query()->count())->toBe(0)
+    expect(fn () => syncProducts())->toThrow(SyncAlreadyRunningException::class)
+        ->and(RemoteProduct::query()->count())->toBe(0)
         ->and($this->requests)->toBe([]);
 
-    $job = new TraceSyncJob(RemoteClinic::class);
+    $job = new TraceSyncJob(RemoteProduct::class);
     $job->handle(app(SyncEngine::class));
-    expect(RemoteClinic::query()->count())->toBe(0, 'a job that finds a running sync leaves the work to it');
+    expect(RemoteProduct::query()->count())->toBe(0, 'a job that finds a running sync leaves the work to it');
 
     $held->release();
     $job->handle(app(SyncEngine::class));
-    expect(RemoteClinic::query()->count())->toBe(1);
+    expect(RemoteProduct::query()->count())->toBe(1);
 });
 
 it('releases the lock after a failure so the retry can run', function (): void {
-    makeClinic();
+    makeProduct();
     $this->interceptor = fn () => Http::response([], 503);
 
-    expect(fn () => syncClinics())->toThrow(RemoteUnavailableException::class);
+    expect(fn () => syncProducts())->toThrow(RemoteUnavailableException::class);
 
     $this->interceptor = null;
-    expect(syncClinics()->created)->toBe(1);
+    expect(syncProducts()->created)->toBe(1);
 });
 
 it('lets the queue retry what may heal and fails what cannot', function (): void {
-    makeClinic();
-    $job = new TraceSyncJob(RemoteClinic::class);
+    makeProduct();
+    $job = new TraceSyncJob(RemoteProduct::class);
 
     $this->interceptor = fn () => Http::response([], 503);
     expect(fn () => $job->handle(app(SyncEngine::class)))->toThrow(RemoteUnavailableException::class);
@@ -103,8 +103,8 @@ it('lets the queue retry what may heal and fails what cannot', function (): void
 });
 
 it('rejects a lock store without atomic locks', function (): void {
-    makeClinic();
+    makeProduct();
     Cache::shouldReceive('getStore')->andReturn(new \stdClass);
 
-    expect(fn () => syncClinics())->toThrow(InvalidConfigurationException::class, 'atomic locks');
+    expect(fn () => syncProducts())->toThrow(InvalidConfigurationException::class, 'atomic locks');
 });

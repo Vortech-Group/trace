@@ -17,6 +17,7 @@ use Vortech\Trace\Models\TraceMeta;
 use Vortech\Trace\Models\TraceStream;
 use Vortech\Trace\Source;
 use Vortech\Trace\Source\SourceRegistry;
+use Vortech\Trace\Support\ModelType;
 use Vortech\Trace\Tracking\TraceableRegistry;
 
 /** Installs, removes and inspects the capture triggers of the models that use CaptureMode::Database. */
@@ -82,7 +83,7 @@ final readonly class TriggerManager
         return new TriggerDefinition(
             connection: $connection,
             modelClass: $model,
-            modelType: $instance->getMorphClass(),
+            modelType: ModelType::of($instance),
             table: $instance->getTable(),
             keyColumn: $instance->getKeyName(),
             softDeleteColumn: is_string($softDeletes) ? $softDeletes : null,

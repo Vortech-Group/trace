@@ -18,10 +18,12 @@ final readonly class SyncResult
         public int $restored,
         public int $durationMs,
         public ?string $cursor,
+        public int $matched = 0,
+        public bool $dryRun = false,
     ) {}
 
     /**
-     * @return array<string, int|string|null>
+     * @return array<string, int|string|bool|null>
      */
     public function toArray(): array
     {
@@ -33,6 +35,8 @@ final readonly class SyncResult
             'unchanged' => $this->unchanged,
             'deleted' => $this->deleted,
             'restored' => $this->restored,
+            'matched' => $this->matched,
+            'dry_run' => $this->dryRun,
             'duration_ms' => $this->durationMs,
             'cursor' => $this->cursor,
         ];

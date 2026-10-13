@@ -6,30 +6,30 @@ namespace Vortech\Trace\Tests\Support;
 
 use Vortech\Trace\Mapper;
 
-final class ClinicMapper extends Mapper
+final class ProductMapper extends Mapper
 {
     public function fields(): array
     {
         return [
             'name',
-            'address',
-            'email',
-            'city',
-            'postal_code',
-            'phone' => 'phone_number',
+            'description',
+            'slug',
+            'brand',
+            'category',
+            'barcode' => 'ean',
             'is_active' => 'active',
         ];
     }
 
     public function match(): array
     {
-        return ['code' => 'clinic_code'];
+        return ['code' => 'product_code'];
     }
 
     public function transform(array $mapped): array
     {
-        if (array_key_exists('email', $mapped) && is_string($mapped['email'])) {
-            $mapped['email'] = mb_strtolower(trim($mapped['email']));
+        if (array_key_exists('slug', $mapped) && is_string($mapped['slug'])) {
+            $mapped['slug'] = mb_strtolower(trim($mapped['slug']));
         }
 
         return $mapped;

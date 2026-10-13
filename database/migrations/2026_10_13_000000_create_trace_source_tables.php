@@ -20,14 +20,13 @@ return new class extends Migration
             $table->id();
             $table->string('model_type')->unique();
             $table->unsignedBigInteger('version')->default(0);
-            // the highest version retention removed, a cursor below it can no longer be served
             $table->unsignedBigInteger('pruned_version')->default(0);
             $table->timestamps();
         });
 
         Schema::create('trace_changes', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('stream_id')->index();
+            $table->unsignedBigInteger('stream_id');
             $table->unsignedBigInteger('version');
             $table->string('model_key', 191);
             $table->string('operation', 20);
@@ -35,6 +34,7 @@ return new class extends Migration
 
             $table->unique(['stream_id', 'version']);
             $table->index(['stream_id', 'model_key', 'version']);
+            $table->index(['stream_id', 'created_at']);
         });
 
         Schema::create('trace_meta', function (Blueprint $table): void {

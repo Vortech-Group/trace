@@ -27,6 +27,8 @@ use Vortech\Trace\Models\Concerns\UsesTraceConnection;
  * @property int $restored
  * @property int $errors
  * @property string|null $last_error
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class TraceSyncRun extends Model
 {

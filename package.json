@@ -1,0 +1,24 @@
+{
+  "name": "laravel-trace-dashboard",
+  "private": true,
+  "type": "module",
+  "description": "Source of the Trace dashboard. The built bundle in dist/ ships with the package, nothing here is needed to use it.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "preact": "^10.27.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}

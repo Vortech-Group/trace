@@ -7,17 +7,17 @@ namespace Vortech\Trace\Tests\Support;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Vortech\Trace\Attributes\Traceable;
-use Vortech\Trace\Enums\CaptureMode;
 
-/** The change log of this model is written by database triggers. */
-#[Traceable(source: DbClinicSource::class, capture: CaptureMode::Database)]
-final class DbClinic extends Model
+#[Traceable(source: ProductSource::class)]
+final class Product extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'db_clinics';
+    protected $table = 'source_products';
 
     protected $guarded = [];
+
+    protected $hidden = ['internal_note'];
 
     protected function casts(): array
     {

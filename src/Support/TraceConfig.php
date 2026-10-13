@@ -117,6 +117,24 @@ final readonly class TraceConfig
         return max(1, config()->integer('trace.remote.runs_retention_days', 30));
     }
 
+    public static function dashboardEnabled(): bool
+    {
+        return config()->boolean('trace.dashboard.enabled', false);
+    }
+
+    public static function dashboardPath(): string
+    {
+        return trim(config()->string('trace.dashboard.path', 'trace'), '/');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function dashboardMiddleware(): array
+    {
+        return self::strings(config('trace.dashboard.middleware', ['web']));
+    }
+
     public static function requireSoftDeletes(): bool
     {
         return config()->boolean('trace.safety.require_soft_deletes', true);

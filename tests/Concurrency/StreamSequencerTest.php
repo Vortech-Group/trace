@@ -6,7 +6,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Vortech\Trace\Models\TraceChange;
 use Vortech\Trace\Models\TraceStream;
-use Vortech\Trace\Tests\Support\Clinic;
+use Vortech\Trace\Tests\Support\Product;
 use Vortech\Trace\Tracking\StreamSequencer;
 
 /*
@@ -45,16 +45,16 @@ beforeEach(function (): void {
 /** Zero rows while another transaction holds the stream row, one row afterwards. */
 function lockedByAnother(Connection $connection): bool
 {
-    return $connection->select('select id from trace_streams where model_type = ? for update skip locked', [Clinic::class]) === [];
+    return $connection->select('select id from trace_streams where model_type = ? for update skip locked', [Product::class]) === [];
 }
 
 it('serialises version assignment: the second writer cannot take the stream while the first is open', function (): void {
     $a = DB::connection('a');
     $b = DB::connection('b');
-    TraceStream::query()->create(['model_type' => Clinic::class, 'version' => 0]);
+    TraceStream::query()->create(['model_type' => Product::class, 'version' => 0]);
 
     $a->beginTransaction();
-    $first = app(StreamSequencer::class)->next(Clinic::class);
+    $first = app(StreamSequencer::class)->next(Product::class);
     expect($first['version'])->toBe(1);
 
     $b->beginTransaction();
@@ -67,15 +67,15 @@ it('serialises version assignment: the second writer cannot take the stream whil
     expect(lockedByAnother($b))->toBeFalse();
     $b->rollBack();
 
-    expect(app(StreamSequencer::class)->next(Clinic::class)['version'])->toBe(2);
+    expect(app(StreamSequencer::class)->next(Product::class)['version'])->toBe(2);
 });
 
 it('does not leave a committed change log row for a rolled back write', function (): void {
     $a = DB::connection('a');
-    TraceStream::query()->create(['model_type' => Clinic::class, 'version' => 0]);
+    TraceStream::query()->create(['model_type' => Product::class, 'version' => 0]);
 
     $a->beginTransaction();
-    app(StreamSequencer::class)->next(Clinic::class);
+    app(StreamSequencer::class)->next(Product::class);
     TraceChange::query()->create(['stream_id' => 1, 'version' => 1, 'model_key' => '1', 'operation' => 'changed']);
     $a->rollBack();
 
@@ -85,10 +85,10 @@ it('does not leave a committed change log row for a rolled back write', function
 it('assigns versions in commit order for two interleaved transactions', function (): void {
     $a = DB::connection('a');
     $b = DB::connection('b');
-    TraceStream::query()->create(['model_type' => Clinic::class, 'version' => 0]);
+    TraceStream::query()->create(['model_type' => Product::class, 'version' => 0]);
 
     $a->beginTransaction();
-    $versionA = app(StreamSequencer::class)->next(Clinic::class)['version'];
+    $versionA = app(StreamSequencer::class)->next(Product::class)['version'];
 
     // B would block here in production; skip-locked proves it cannot overtake A
     $b->beginTransaction();
@@ -96,7 +96,7 @@ it('assigns versions in commit order for two interleaved transactions', function
     $b->rollBack();
 
     $a->commit();
-    $versionB = app(StreamSequencer::class)->next(Clinic::class)['version'];
+    $versionB = app(StreamSequencer::class)->next(Product::class)['version'];
 
     expect([$versionA, $versionB])->toBe([1, 2]);
 });

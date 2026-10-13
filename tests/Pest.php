@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\DB;
 use Vortech\Trace\Data\SyncResult;
 use Vortech\Trace\Facades\Remote;
-use Vortech\Trace\Tests\Support\Clinic;
-use Vortech\Trace\Tests\Support\RemoteClinic;
+use Vortech\Trace\Tests\Support\Product;
+use Vortech\Trace\Tests\Support\RemoteProduct;
 use Vortech\Trace\Tests\TestCase;
 
 pest()->extend(TestCase::class)->in('Feature', 'Unit', 'Concurrency');
@@ -24,28 +24,28 @@ function inTx(\Closure $callback): mixed
 /**
  * @param  array<string, mixed>  $attributes
  */
-function makeClinic(array $attributes = []): Clinic
+function makeProduct(array $attributes = []): Product
 {
     static $n = 0;
     $n++;
 
-    return inTx(fn (): Clinic => Clinic::query()->create($attributes + [
-        'code' => sprintf('CL-%04d', $n),
-        'name' => "Clinic {$n}",
-        'email' => "Clinic{$n}@Example.com ",
+    return inTx(fn (): Product => Product::query()->create($attributes + [
+        'code' => sprintf('PR-%04d', $n),
+        'name' => "Product {$n}",
+        'slug' => "Product{$n}-Slug ",
         'is_active' => true,
         'internal_note' => 'never published',
     ]));
 }
 
-function syncClinics(): SyncResult
+function syncProducts(): SyncResult
 {
-    return Remote::for(RemoteClinic::class)->sync()->run();
+    return Remote::for(RemoteProduct::class)->sync()->run();
 }
 
-function reconcileClinics(): SyncResult
+function reconcileProducts(): SyncResult
 {
-    return Remote::for(RemoteClinic::class)->reconcile()->run();
+    return Remote::for(RemoteProduct::class)->reconcile()->run();
 }
 
 /** Installs the capture triggers of the models that use CaptureMode::Database. */

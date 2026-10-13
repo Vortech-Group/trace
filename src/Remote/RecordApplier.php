@@ -58,6 +58,10 @@ final readonly class RecordApplier
         if (! $model instanceof Model) {
             $matchValues = $this->attributes->matchValues($mapper, $record->attributes);
             $model = $this->resolver->matchedModel($context, $record->key, $matchValues);
+
+            if ($model instanceof Model) {
+                $context->tally->matched++;
+            }
         }
 
         if (! $model instanceof Model) {

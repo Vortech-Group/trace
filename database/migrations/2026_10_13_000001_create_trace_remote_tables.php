@@ -27,7 +27,6 @@ return new class extends Migration
             $table->uuid('last_seen_run_id')->nullable()->index();
             $table->timestamps();
 
-            // model_type is part of the remote key index so one feed can feed more than one local model
             $table->unique(['source_instance_id', 'feed', 'model_type', 'remote_key'], 'trace_links_remote_unique');
             $table->unique(['source_instance_id', 'feed', 'model_type', 'model_key'], 'trace_links_local_unique');
             $table->index(['model_type', 'model_key']);
@@ -36,7 +35,6 @@ return new class extends Migration
         Schema::create('trace_sync_states', function (Blueprint $table): void {
             $table->id();
             $table->string('source_connection');
-            // unknown until the first response of the source
             $table->string('source_instance_id', 64)->nullable();
             $table->string('feed');
             $table->string('model_type');
@@ -70,6 +68,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['model_type', 'created_at']);
+            $table->index('created_at');
         });
     }
 

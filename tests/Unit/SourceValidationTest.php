@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use Vortech\Trace\Exceptions\InvalidSourceException;
 use Vortech\Trace\Source;
-use Vortech\Trace\Tests\Support\Clinic;
-use Vortech\Trace\Tests\Support\ClinicSource;
-use Vortech\Trace\Tests\Support\UntrackedClinic;
+use Vortech\Trace\Tests\Support\Product;
+use Vortech\Trace\Tests\Support\ProductSource;
+use Vortech\Trace\Tests\Support\UntrackedProduct;
 
 function sourceWith(string $model, array $fields): Source
 {
@@ -21,45 +21,45 @@ function sourceWith(string $model, array $fields): Source
 }
 
 it('accepts a valid source', function (): void {
-    new ClinicSource()->validate();
+    new ProductSource()->validate();
 
-    expect(new ClinicSource()->fields())->toContain('code', 'name');
+    expect(new ProductSource()->fields())->toContain('code', 'name');
 });
 
 it('refuses an invalid source', function (string $model, array $fields, string $message): void {
     expect(fn () => sourceWith($model, $fields)->validate())->toThrow(InvalidSourceException::class, $message);
 })->with([
     'missing model' => ['Nope\\Missing', ['name'], 'Eloquent model'],
-    'not traceable' => [UntrackedClinic::class, ['name'], '#[Traceable]'],
-    'no fields' => [Clinic::class, [], 'non-empty list'],
-    'hidden on the model' => [Clinic::class, ['name', 'internal_note'], 'hidden'],
-    'forbidden by config' => [Clinic::class, ['name', 'password'], 'forbidden_fields'],
-    'forbidden regardless of case' => [Clinic::class, ['Remember_Token'], 'forbidden_fields'],
-    'the primary key' => [Clinic::class, ['id', 'name'], 'primary key'],
-    'duplicates' => [Clinic::class, ['name', 'name'], 'duplicates'],
+    'not traceable' => [UntrackedProduct::class, ['name'], '#[Traceable]'],
+    'no fields' => [Product::class, [], 'non-empty list'],
+    'hidden on the model' => [Product::class, ['name', 'internal_note'], 'hidden'],
+    'forbidden by config' => [Product::class, ['name', 'password'], 'forbidden_fields'],
+    'forbidden regardless of case' => [Product::class, ['Remember_Token'], 'forbidden_fields'],
+    'the primary key' => [Product::class, ['id', 'name'], 'primary key'],
+    'duplicates' => [Product::class, ['name', 'name'], 'duplicates'],
 ]);
 
 it('never puts unlisted attributes into the payload', function (): void {
-    $clinic = makeClinic(['internal_note' => 'secret', 'name' => 'Central']);
+    $product = makeProduct(['internal_note' => 'secret', 'name' => 'Central']);
 
-    $attributes = new ClinicSource()->attributesFor($clinic);
+    $attributes = new ProductSource()->attributesFor($product);
 
-    expect(array_keys($attributes))->toBe(['code', 'name', 'address', 'phone', 'email', 'city', 'postal_code', 'is_active'])
+    expect(array_keys($attributes))->toBe(['code', 'name', 'description', 'barcode', 'slug', 'brand', 'category', 'is_active'])
         ->and($attributes)->not->toHaveKey('internal_note')
         ->and($attributes)->not->toHaveKey('id')
         ->and($attributes['is_active'])->toBeTrue();
 });
 
 it('changes the schema hash with the published fields only', function (): void {
-    $a = sourceWith(Clinic::class, ['name', 'code']);
-    $b = sourceWith(Clinic::class, ['code', 'name']);
-    $c = sourceWith(Clinic::class, ['name']);
+    $a = sourceWith(Product::class, ['name', 'code']);
+    $b = sourceWith(Product::class, ['code', 'name']);
+    $c = sourceWith(Product::class, ['name']);
 
-    expect($a->schemaHash('clinics'))->toBe($b->schemaHash('clinics'))
-        ->and($a->schemaHash('clinics'))->not->toBe($c->schemaHash('clinics'))
-        ->and($a->schemaHash('clinics'))->toStartWith('sha256:');
+    expect($a->schemaHash('products'))->toBe($b->schemaHash('products'))
+        ->and($a->schemaHash('products'))->not->toBe($c->schemaHash('products'))
+        ->and($a->schemaHash('products'))->toStartWith('sha256:');
 });
 
 it('reports fields that are no columns', function (): void {
-    expect(sourceWith(Clinic::class, ['name', 'ghost'])->missingColumns())->toBe(['ghost']);
+    expect(sourceWith(Product::class, ['name', 'ghost'])->missingColumns())->toBe(['ghost']);
 });

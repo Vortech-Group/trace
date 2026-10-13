@@ -16,4 +16,7 @@ final class Tally
     public int $deleted = 0;
 
     public int $restored = 0;
+
+    /** Records that found an existing local row through match() instead of creating one. */
+    public int $matched = 0;
 }

@@ -18,6 +18,6 @@ final class {{ class }} extends Mapper
 
     // public function match(): array
     // {
-    //     return ['code' => 'clinic_code'];
+    //     return ['code' => 'product_code'];
     // }
 }

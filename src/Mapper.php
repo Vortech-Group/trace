@@ -11,7 +11,7 @@ namespace Vortech\Trace;
 abstract class Mapper
 {
     /**
-     * Whitelist of remote attributes. `'name'` keeps the name, `'phone' => 'phone_number'` renames it.
+     * Whitelist of remote attributes. `'name'` keeps the name, `'barcode' => 'ean'` renames it.
      *
      * @return array<int|string, string>
      */

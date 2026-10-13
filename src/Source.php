@@ -15,6 +15,7 @@ use JsonException;
 use Throwable;
 use UnitEnum;
 use Vortech\Trace\Exceptions\InvalidSourceException;
+use Vortech\Trace\Support\ModelType;
 use Vortech\Trace\Support\TraceConfig;
 use Vortech\Trace\Tracking\TraceableRegistry;
 
@@ -77,7 +78,7 @@ abstract class Source
 
     public function morphClass(): string
     {
-        return $this->newModel()->getMorphClass();
+        return ModelType::of($this->newModel());
     }
 
     /**

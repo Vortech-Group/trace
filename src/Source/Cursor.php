@@ -85,6 +85,22 @@ final readonly class Cursor
     }
 
     /**
+     * Reads a stored cursor for display only. The signature is not checked: never trust the result.
+     *
+     * @return array{type: string, version: int, lastKey: string|null}|null
+     */
+    public static function peek(?string $token): ?array
+    {
+        $data = blank($token) ? null : json_decode(self::unbase64(explode('.', $token, 2)[0]), true);
+
+        if (! is_array($data) || ! is_string($data['t'] ?? null) || ! is_int($data['v'] ?? null)) {
+            return null;
+        }
+
+        return ['type' => $data['t'], 'version' => $data['v'], 'lastKey' => is_string($data['k'] ?? null) ? $data['k'] : null];
+    }
+
+    /**
      * @throws InvalidConfigurationException
      * @throws Throwable
      */

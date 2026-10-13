@@ -13,9 +13,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Vortech\Trace\Source;
-use Vortech\Trace\Tests\Support\Clinic;
-use Vortech\Trace\Tests\Support\ClinicSource;
-use Vortech\Trace\Tests\Support\DbClinic;
+use Vortech\Trace\Tests\Support\AliasedProduct;
+use Vortech\Trace\Tests\Support\DbProduct;
+use Vortech\Trace\Tests\Support\Product;
+use Vortech\Trace\Tests\Support\ProductSource;
 use Vortech\Trace\TraceServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -43,6 +44,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('trace.remote.default', ['url' => 'https://source.test/api', 'token' => self::TOKEN]);
         $app['config']->set('trace.remote.retries', 1);
         $app['config']->set('trace.source.rate_limit', 0);
+        $app['config']->set('trace.dashboard.enabled', true);
     }
 
     protected function defineRoutes($router): void
@@ -50,9 +52,10 @@ abstract class TestCase extends Orchestra
         /** @var Router $router */
         $router->prefix('api')->group(function (): void {
             $router = app(Router::class);
-            $router->source('clinics', ClinicSource::class);
-            $router->source('clinics-by-model', Clinic::class);
-            $router->source('db-clinics', DbClinic::class);
+            $router->source('products', ProductSource::class);
+            $router->source('products-by-model', Product::class);
+            $router->source('db-products', DbProduct::class);
+            $router->source('aliased-products', AliasedProduct::class);
         });
     }
 
@@ -60,40 +63,56 @@ abstract class TestCase extends Orchestra
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-        Schema::create('source_clinics', function (Blueprint $table): void {
+        Schema::create('source_products', function (Blueprint $table): void {
             $table->id();
             $table->string('code')->nullable();
             $table->string('name');
-            $table->string('address')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('email')->nullable();
-            $table->string('city')->nullable();
-            $table->string('postal_code')->nullable();
+            $table->string('description')->nullable();
+            $table->string('barcode')->nullable();
+            $table->string('slug')->nullable();
+            $table->string('brand')->nullable();
+            $table->string('category')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('internal_note')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
 
-        Schema::create('db_clinics', function (Blueprint $table): void {
+        Schema::create('aliased_products', function (Blueprint $table): void {
             $table->id();
             $table->string('code')->nullable();
             $table->string('name');
-            $table->boolean('is_active')->default(true);
-            $table->string('internal_note')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
 
-        Schema::create('remote_clinics', function (Blueprint $table): void {
+        Schema::create('aliased_remote_products', function (Blueprint $table): void {
             $table->id();
-            $table->string('clinic_code')->nullable();
+            $table->string('code')->nullable();
             $table->string('name')->nullable();
-            $table->string('address')->nullable();
-            $table->string('phone_number')->nullable();
-            $table->string('email')->nullable();
-            $table->string('city')->nullable();
-            $table->string('postal_code')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('db_products', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code')->nullable();
+            $table->string('name');
+            $table->boolean('is_active')->default(true);
+            $table->string('internal_note')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('remote_products', function (Blueprint $table): void {
+            $table->id();
+            $table->string('product_code')->nullable();
+            $table->string('name')->nullable();
+            $table->string('description')->nullable();
+            $table->string('ean')->nullable();
+            $table->string('slug')->nullable();
+            $table->string('brand')->nullable();
+            $table->string('category')->nullable();
             $table->boolean('active')->default(false);
             $table->string('local_note')->nullable();
             $table->softDeletes();

@@ -6,6 +6,7 @@ namespace Vortech\Trace\Data;
 
 use Illuminate\Database\Eloquent\Model;
 use Vortech\Trace\Mapper;
+use Vortech\Trace\Support\ModelType;
 
 /** The validated meaning of a model's #[Sync] attribute. */
 final readonly class SyncDefinition
@@ -27,6 +28,6 @@ final readonly class SyncDefinition
 
     public function morphClass(): string
     {
-        return $this->newModel()->getMorphClass();
+        return ModelType::of($this->newModel());
     }
 }

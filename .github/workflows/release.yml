@@ -17,9 +17,12 @@ jobs:
   concurrency:
     uses: ./.github/workflows/concurrency.yml
 
+  dashboard:
+    uses: ./.github/workflows/dashboard.yml
+
   release:
     name: GitHub Release
-    needs: [tests, static-analysis, concurrency]
+    needs: [tests, static-analysis, concurrency, dashboard]
     runs-on: ubuntu-latest
     permissions:
       contents: write

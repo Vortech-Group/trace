@@ -6,7 +6,7 @@ use Vortech\Trace\Exceptions\InvalidMappingException;
 use Vortech\Trace\Exceptions\SchemaMismatchException;
 use Vortech\Trace\Mapper;
 use Vortech\Trace\Remote\AttributeMapper;
-use Vortech\Trace\Tests\Support\ClinicMapper;
+use Vortech\Trace\Tests\Support\ProductMapper;
 
 final class SloppyMapper extends Mapper
 {
@@ -23,46 +23,46 @@ final class SloppyMapper extends Mapper
     }
 }
 
-function clinicPayload(array $override = []): array
+function productPayload(array $override = []): array
 {
     return $override + [
         'name' => 'Central',
-        'address' => 'Main st 1',
-        'email' => ' Info@Example.COM ',
-        'city' => 'Budapest',
-        'postal_code' => '1011',
-        'phone' => '+36123',
+        'description' => 'Main st 1',
+        'slug' => ' Info-Slug ',
+        'brand' => 'Budapest',
+        'category' => '1011',
+        'barcode' => '+36123',
         'is_active' => true,
-        'code' => 'CL-1',
+        'code' => 'PR-1',
     ];
 }
 
 it('keeps equal names and renames the others', function (): void {
-    $mapped = new AttributeMapper()->map(new ClinicMapper, clinicPayload());
+    $mapped = new AttributeMapper()->map(new ProductMapper, productPayload());
 
-    expect($mapped)->toHaveKeys(['name', 'phone_number', 'active'])
-        ->and($mapped)->not->toHaveKeys(['phone', 'is_active', 'code'])
-        ->and($mapped['phone_number'])->toBe('+36123')
+    expect($mapped)->toHaveKeys(['name', 'ean', 'active'])
+        ->and($mapped)->not->toHaveKeys(['barcode', 'is_active', 'code'])
+        ->and($mapped['ean'])->toBe('+36123')
         ->and($mapped['active'])->toBeTrue();
 });
 
 it('runs transform() on local column names', function (): void {
-    expect(new AttributeMapper()->map(new ClinicMapper, clinicPayload())['email'])->toBe('info@example.com');
+    expect(new AttributeMapper()->map(new ProductMapper, productPayload())['slug'])->toBe('info-slug');
 });
 
 it('treats a sent null as a value', function (): void {
-    $mapped = new AttributeMapper()->map(new ClinicMapper, clinicPayload(['phone' => null, 'email' => null]));
+    $mapped = new AttributeMapper()->map(new ProductMapper, productPayload(['barcode' => null, 'slug' => null]));
 
-    expect($mapped)->toHaveKey('phone_number', null)
-        ->and($mapped)->toHaveKey('email', null);
+    expect($mapped)->toHaveKey('ean', null)
+        ->and($mapped)->toHaveKey('slug', null);
 });
 
 it('treats a missing attribute as a schema error, never as null', function (): void {
-    $payload = clinicPayload();
-    unset($payload['phone']);
+    $payload = productPayload();
+    unset($payload['barcode']);
 
-    expect(fn () => new AttributeMapper()->map(new ClinicMapper, $payload))
-        ->toThrow(SchemaMismatchException::class, 'phone');
+    expect(fn () => new AttributeMapper()->map(new ProductMapper, $payload))
+        ->toThrow(SchemaMismatchException::class, 'barcode');
 });
 
 it('refuses a transform() that adds a column outside the whitelist', function (): void {
@@ -73,12 +73,12 @@ it('refuses a transform() that adds a column outside the whitelist', function ()
 it('builds the match values from the remote attributes and skips nulls', function (): void {
     $mapper = new AttributeMapper;
 
-    expect($mapper->matchValues(new ClinicMapper, clinicPayload()))->toBe(['clinic_code' => 'CL-1'])
-        ->and($mapper->matchValues(new ClinicMapper, clinicPayload(['code' => null])))->toBe([])
-        ->and(fn () => $mapper->matchValues(new ClinicMapper, ['name' => 'x']))->toThrow(SchemaMismatchException::class, 'code');
+    expect($mapper->matchValues(new ProductMapper, productPayload()))->toBe(['product_code' => 'PR-1'])
+        ->and($mapper->matchValues(new ProductMapper, productPayload(['code' => null])))->toBe([])
+        ->and(fn () => $mapper->matchValues(new ProductMapper, ['name' => 'x']))->toThrow(SchemaMismatchException::class, 'code');
 });
 
 it('exposes the normalised mapping', function (): void {
-    expect(new ClinicMapper()->mapping())->toMatchArray(['name' => 'name', 'phone' => 'phone_number', 'is_active' => 'active'])
-        ->and(new ClinicMapper()->localColumns())->toContain('phone_number', 'name');
+    expect(new ProductMapper()->mapping())->toMatchArray(['name' => 'name', 'barcode' => 'ean', 'is_active' => 'active'])
+        ->and(new ProductMapper()->localColumns())->toContain('ean', 'name');
 });

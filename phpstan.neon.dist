@@ -15,3 +15,8 @@ parameters:
         -
             identifier: staticMethod.dynamicCall
             message: '#Eloquent\\Builder<#'
+        # the package views live in the trace:: namespace, which larastan's skeleton application does not know
+        -
+            identifier: argument.type
+            message: '#expects view-string, string given#'
+            path: src/Dashboard/Http/Controllers/DashboardController.php

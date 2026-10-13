@@ -7,7 +7,10 @@ namespace Vortech\Trace\Attributes;
 use Attribute;
 use Vortech\Trace\Mapper;
 
-/** Declares that the model receives the feed `$source` through `$mapper`. */
+/**
+ * Declares that the model receives the feed `$source` through `$mapper`. `$alias` is the stable name
+ * stored in the model_type columns instead of the class name (or its morph map alias).
+ */
 #[Attribute(Attribute::TARGET_CLASS)]
 final readonly class Sync
 {
@@ -18,5 +21,6 @@ final readonly class Sync
         public string $source,
         public string $mapper,
         public string $connection = 'default',
+        public ?string $alias = null,
     ) {}
 }

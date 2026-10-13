@@ -46,6 +46,8 @@ If the project maintainer has any additional requirements, you will find them li
 
 - **Document any change in behaviour** - Make sure the `README.md` and any other relevant documentation are kept up-to-date.
 
+- **Rebuild the dashboard when you change it** - The dashboard is a Preact app in `resources/js`, shipped prebuilt in `dist/` (users need no Node). After a change run `npm install` once (Node 22, see `.nvmrc`) and `npm run build`, and commit the new `dist/`; `npm run typecheck` and `npm test` check the frontend. CI fails when `dist/` is not what the sources build to.
+
 - **Consider our release cycle** - We try to follow [SemVer v2.0.0](https://semver.org/). Randomly breaking public APIs is not an option.
 
 - **One pull request per feature** - If you want to do more than one thing, send multiple pull requests.

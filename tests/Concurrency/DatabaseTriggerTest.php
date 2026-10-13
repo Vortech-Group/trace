@@ -10,7 +10,7 @@ use Vortech\Trace\Capture\TriggerManager;
 use Vortech\Trace\Enums\TriggerStatus;
 use Vortech\Trace\Models\TraceChange;
 use Vortech\Trace\Models\TraceStream;
-use Vortech\Trace\Tests\Support\DbClinic;
+use Vortech\Trace\Tests\Support\DbProduct;
 
 /*
  * Runs the generated trigger SQL on a real MySQL or PostgreSQL server, see StreamSequencerTest for the setup.
@@ -42,8 +42,8 @@ beforeEach(function (): void {
 
     $this->artisan('migrate:fresh', ['--database' => 'a', '--path' => realpath(__DIR__.'/../../database/migrations'), '--realpath' => true])->assertSuccessful();
 
-    Schema::connection('a')->dropIfExists('db_clinics');
-    Schema::connection('a')->create('db_clinics', function (Blueprint $table): void {
+    Schema::connection('a')->dropIfExists('db_products');
+    Schema::connection('a')->create('db_products', function (Blueprint $table): void {
         $table->id();
         $table->string('code')->nullable();
         $table->string('name');
@@ -54,21 +54,21 @@ beforeEach(function (): void {
     });
 
     $this->manager = app(TriggerManager::class);
-    $this->definition = $this->manager->definitionFor(DbClinic::class);
+    $this->definition = $this->manager->definitionFor(DbProduct::class);
     $this->manager->install($this->definition);
 });
 
 afterEach(function (): void {
     if (isset($this->manager, $this->definition)) {
         $this->manager->remove($this->definition);
-        Schema::connection('a')->dropIfExists('db_clinics');
+        Schema::connection('a')->dropIfExists('db_products');
     }
 });
 
 /** Zero rows while another transaction holds the stream row, one row afterwards. */
 function streamLockedByAnother(Connection $connection): bool
 {
-    return $connection->select('select id from trace_streams where model_type = ? for update skip locked', [DbClinic::class]) === [];
+    return $connection->select('select id from trace_streams where model_type = ? for update skip locked', [DbProduct::class]) === [];
 }
 
 it('installs and reports the triggers', function (): void {
@@ -86,21 +86,21 @@ it('installs and reports the triggers', function (): void {
 it('logs inserts, updates, soft deletes, restores and deletes written without a model', function (): void {
     $db = DB::connection('a');
 
-    $db->table('db_clinics')->insert(['name' => 'Raw', 'code' => 'RAW-1']);
-    $db->table('db_clinics')->where('code', 'RAW-1')->update(['name' => 'Renamed']);
-    $db->table('db_clinics')->where('code', 'RAW-1')->update(['deleted_at' => now()]);
-    $db->table('db_clinics')->where('code', 'RAW-1')->update(['deleted_at' => null]);
-    $db->table('db_clinics')->where('code', 'RAW-1')->delete();
+    $db->table('db_products')->insert(['name' => 'Raw', 'code' => 'RAW-1']);
+    $db->table('db_products')->where('code', 'RAW-1')->update(['name' => 'Renamed']);
+    $db->table('db_products')->where('code', 'RAW-1')->update(['deleted_at' => now()]);
+    $db->table('db_products')->where('code', 'RAW-1')->update(['deleted_at' => null]);
+    $db->table('db_products')->where('code', 'RAW-1')->delete();
 
     expect(TraceChange::query()->orderBy('version')->get()->map(fn (TraceChange $c): string => "{$c->version}:{$c->model_key}:{$c->operation->value}")->all())
         ->toBe(['1:1:changed', '2:1:changed', '3:1:deleted', '4:1:changed', '5:1:deleted'])
-        ->and(TraceStream::query()->where('model_type', DbClinic::class)->firstOrFail()->version)->toBe(5);
+        ->and(TraceStream::query()->where('model_type', DbProduct::class)->firstOrFail()->version)->toBe(5);
 });
 
 it('keeps the model lastInsertId intact', function (): void {
-    $clinic = DbClinic::query()->create(['name' => 'Eloquent', 'code' => 'E-1']);
+    $product = DbProduct::query()->create(['name' => 'Eloquent', 'code' => 'E-1']);
 
-    expect($clinic->getKey())->toBe(1)->and(TraceChange::query()->count())->toBe(1);
+    expect($product->getKey())->toBe(1)->and(TraceChange::query()->count())->toBe(1);
 });
 
 it('holds the stream row until the writing transaction ends', function (): void {
@@ -108,7 +108,7 @@ it('holds the stream row until the writing transaction ends', function (): void 
     $b = DB::connection('b');
 
     $a->beginTransaction();
-    $a->table('db_clinics')->insert(['name' => 'First']);
+    $a->table('db_products')->insert(['name' => 'First']);
 
     $b->beginTransaction();
     expect(streamLockedByAnother($b))->toBeTrue('a concurrent writer must queue behind the open transaction');
@@ -120,7 +120,7 @@ it('holds the stream row until the writing transaction ends', function (): void 
     expect(streamLockedByAnother($b))->toBeFalse();
     $b->rollBack();
 
-    $a->table('db_clinics')->insert(['name' => 'Second']);
+    $a->table('db_products')->insert(['name' => 'Second']);
 
     expect(TraceChange::query()->orderBy('version')->pluck('version')->all())->toBe([1, 2]);
 });
@@ -129,8 +129,8 @@ it('leaves no log behind a rolled back write', function (): void {
     $a = DB::connection('a');
 
     $a->beginTransaction();
-    $a->table('db_clinics')->insert(['name' => 'Gone']);
+    $a->table('db_products')->insert(['name' => 'Gone']);
     $a->rollBack();
 
-    expect(TraceChange::query()->count())->toBe(0)->and(TraceStream::query()->where('model_type', DbClinic::class)->firstOrFail()->version)->toBe(0);
+    expect(TraceChange::query()->count())->toBe(0)->and(TraceStream::query()->where('model_type', DbProduct::class)->firstOrFail()->version)->toBe(0);
 });

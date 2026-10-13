@@ -50,9 +50,9 @@ return [
             'token' => env('TRACE_REMOTE_TOKEN'),
         ],
 
-        // Additional sources, referenced by #[Sync(connection: 'hospital')].
+        // Additional sources, referenced by #[Sync(connection: 'logistics')].
         'connections' => [
-            // 'hospital' => ['url' => env('HOSPITAL_TRACE_URL'), 'token' => env('HOSPITAL_TRACE_TOKEN')],
+            // 'logistics' => ['url' => env('LOGISTICS_TRACE_URL'), 'token' => env('LOGISTICS_TRACE_TOKEN')],
         ],
 
         // Models trace:doctor should validate besides the ones that already synced.
@@ -75,5 +75,19 @@ return [
         // Soft deleting more than this share of the linked records needs an explicit override.
         'max_missing_deletion_ratio' => 0.20,
         'min_records_for_ratio_guard' => 100,
+    ],
+
+    'dashboard' => [
+
+        /*
+        | The read-mostly dashboard under /{path}. It is off by default. Who may open it is decided by
+        | the viewTrace gate, who may start a sync by the manageTrace gate. Both default to the local
+        | environment: define them in a service provider to open them up.
+        */
+        'enabled' => env('TRACE_DASHBOARD_ENABLED', false),
+
+        'path' => 'trace',
+
+        'middleware' => ['web'],
     ],
 ];

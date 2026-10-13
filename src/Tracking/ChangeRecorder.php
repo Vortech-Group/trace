@@ -10,6 +10,7 @@ use Vortech\Trace\Enums\ChangeType;
 use Vortech\Trace\Exceptions\ConnectionMismatchException;
 use Vortech\Trace\Models\TraceChange;
 use Vortech\Trace\Models\TraceStream;
+use Vortech\Trace\Support\ModelType;
 
 /** Writes one durable change log row, synchronously, on the connection of the model. */
 final readonly class ChangeRecorder
@@ -35,7 +36,7 @@ final readonly class ChangeRecorder
         );
 
         $write = function () use ($model, $type): void {
-            ['stream' => $stream, 'version' => $version] = $this->sequencer->next($model->getMorphClass());
+            ['stream' => $stream, 'version' => $version] = $this->sequencer->next(ModelType::of($model));
 
             TraceChange::query()->create([
                 'stream_id' => $stream->id,

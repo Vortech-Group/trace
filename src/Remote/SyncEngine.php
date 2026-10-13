@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vortech\Trace\Remote;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use Vortech\Trace\Data\SyncContext;
@@ -44,9 +45,28 @@ final readonly class SyncEngine
         $lock = $this->locks->acquire($definition);
 
         try {
-            return $this->execute($definition, $request);
+            return $request->dryRun ? $this->rehearse($definition, $request) : $this->execute($definition, $request);
         } finally {
             $lock->release();
+        }
+    }
+
+    /**
+     * The real run, written into a transaction that is always rolled back: the source is read, the pages are applied
+     * through the same code (so ambiguous matches and constraint violations surface), nothing stays. Model events
+     * and the sync events are silenced, so no observer or listener reacts to rows that will not exist.
+     *
+     * @throws Throwable
+     */
+    private function rehearse(SyncDefinition $definition, SyncRequest $request): SyncResult
+    {
+        $connection = new TraceSyncState()->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            return Model::withoutEvents(fn (): SyncResult => $this->execute($definition, $request));
+        } finally {
+            $connection->rollBack();
         }
     }
 
@@ -72,7 +92,9 @@ final readonly class SyncEngine
             'started_at' => now(),
         ]);
 
-        event(new SyncStarted($run));
+        if (! $request->dryRun) {
+            event(new SyncStarted($run));
+        }
 
         $tally = new Tally;
 
@@ -83,7 +105,7 @@ final readonly class SyncEngine
 
             $state->forceFill(['status' => SyncStatus::Ready, 'last_success_at' => now(), 'last_error' => null])->save();
         } catch (Throwable $exception) {
-            $this->fail($state, $run, $tally, $exception);
+            $this->fail($state, $run, $tally, $exception, $request->dryRun);
 
             throw $exception;
         }
@@ -98,6 +120,8 @@ final readonly class SyncEngine
             restored: $tally->restored,
             durationMs: (int) ((hrtime(true) - $started) / 1_000_000),
             cursor: $cursor,
+            matched: $tally->matched,
+            dryRun: $request->dryRun,
         );
 
         $run->forceFill([
@@ -107,8 +131,10 @@ final readonly class SyncEngine
             ...$this->counters($tally),
         ])->save();
 
-        Log::info('trace.sync.completed', ['feed' => $definition->feed, 'model' => $definition->model, ...$result->toArray()]);
-        event(new SyncCompleted($run, $result));
+        if (! $request->dryRun) {
+            Log::info('trace.sync.completed', ['feed' => $definition->feed, 'model' => $definition->model, ...$result->toArray()]);
+            event(new SyncCompleted($run, $result));
+        }
 
         return $result;
     }
@@ -142,7 +168,7 @@ final readonly class SyncEngine
         return $this->incremental->run($context, $state, $state->cursor, null, $state->schema_hash, persist: true);
     }
 
-    private function fail(TraceSyncState $state, TraceSyncRun $run, Tally $tally, Throwable $exception): void
+    private function fail(TraceSyncState $state, TraceSyncRun $run, Tally $tally, Throwable $exception, bool $dryRun): void
     {
         $code = $exception instanceof TraceException ? $exception->errorCode : 'unexpected_error';
 
@@ -165,6 +191,10 @@ final readonly class SyncEngine
             'last_error' => $message,
             ...$this->counters($tally),
         ])->save();
+
+        if ($dryRun) {
+            return;
+        }
 
         Log::warning('trace.sync.failed', ['feed' => $state->feed, 'model' => $state->model_type, 'code' => $code, 'run' => $run->id]);
         event(new SyncFailed($run, $exception));

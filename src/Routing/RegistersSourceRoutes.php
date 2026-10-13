@@ -14,7 +14,7 @@ use Vortech\Trace\Source;
 use Vortech\Trace\Tracking\TraceableRegistry;
 
 /**
- * Route::source('clinics', ClinicSource::class) or Route::source('clinics', Clinic::class).
+ * Route::source('products', ProductSource::class) or Route::source('products', Product::class).
  * Controller class actions with the source stored as route defaults, so the routes survive `route:cache`.
  */
 final readonly class RegistersSourceRoutes

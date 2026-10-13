@@ -10,10 +10,10 @@ use Vortech\Trace\Exceptions\InvalidMappingException;
 use Vortech\Trace\Exceptions\InvalidSyncDefinitionException;
 use Vortech\Trace\Mapper;
 use Vortech\Trace\Remote\MapperResolver;
-use Vortech\Trace\Tests\Support\Clinic;
-use Vortech\Trace\Tests\Support\ClinicMapper;
-use Vortech\Trace\Tests\Support\RemoteClinic;
-use Vortech\Trace\Tests\Support\UntrackedClinic;
+use Vortech\Trace\Tests\Support\Product;
+use Vortech\Trace\Tests\Support\ProductMapper;
+use Vortech\Trace\Tests\Support\RemoteProduct;
+use Vortech\Trace\Tests\Support\UntrackedProduct;
 use Vortech\Trace\Tracking\TraceableRegistry;
 
 #[Traceable]
@@ -49,7 +49,7 @@ final class EmptyMapper extends Mapper
     }
 }
 
-#[Sync(source: 'x', mapper: ClinicMapper::class)]
+#[Sync(source: 'x', mapper: ProductMapper::class)]
 final class NoSoftDeletesSync extends Model {}
 
 #[Sync(source: 'x', mapper: \KeyWritingMapper::class)]
@@ -79,17 +79,17 @@ final class WrongMapperSync extends Model
 it('detects the Traceable marker, also on parents, and ignores unmarked models', function (): void {
     $registry = new TraceableRegistry;
 
-    expect($registry->isTraceable(Clinic::class))->toBeTrue()
+    expect($registry->isTraceable(Product::class))->toBeTrue()
         ->and($registry->isTraceable(\TraceableChild::class))->toBeTrue()
-        ->and($registry->isTraceable(UntrackedClinic::class))->toBeFalse();
+        ->and($registry->isTraceable(UntrackedProduct::class))->toBeFalse();
 });
 
 it('resolves a valid #[Sync] declaration', function (): void {
-    $definition = app(MapperResolver::class)->resolve(RemoteClinic::class);
+    $definition = app(MapperResolver::class)->resolve(RemoteProduct::class);
 
-    expect($definition->feed)->toBe('clinics')
+    expect($definition->feed)->toBe('products')
         ->and($definition->connection)->toBe('default')
-        ->and($definition->mapper)->toBeInstanceOf(ClinicMapper::class);
+        ->and($definition->mapper)->toBeInstanceOf(ProductMapper::class);
 });
 
 it('refuses an invalid #[Sync] declaration', function (string $model, string $exception, string $message): void {

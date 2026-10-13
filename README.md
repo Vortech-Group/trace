@@ -75,40 +75,40 @@ Mark the model. There is no trait and no interface:
 use Vortech\Trace\Attributes\Traceable;
 
 #[Traceable]
-class Clinic extends Model
+class Product extends Model
 {
     use SoftDeletes;
 }
 ```
 
-Describe what is published (`php artisan trace:make-source ClinicSource`). `$fields` is the whitelist: nothing else ever leaves the application, and hidden attributes, passwords, tokens and the primary key are refused.
+Describe what is published (`php artisan trace:make-source ProductSource`). `$fields` is the whitelist: nothing else ever leaves the application, and hidden attributes, passwords, tokens and the primary key are refused.
 
 ```php
 use Vortech\Trace\Source;
 
-final class ClinicSource extends Source
+final class ProductSource extends Source
 {
-    protected string $model = Clinic::class;
+    protected string $model = Product::class;
 
-    protected array $fields = ['code', 'name', 'address', 'phone', 'email', 'city', 'postal_code', 'is_active'];
+    protected array $fields = ['code', 'name', 'description', 'barcode', 'slug', 'brand', 'category', 'is_active'];
 }
 ```
 
 Register the feed in `routes/api.php`:
 
 ```php
-Route::source('clinics', ClinicSource::class);
-// GET /api/clinics/snapshot  full data, paged, for the first import and reconciles
-// GET /api/clinics/changes   what changed after a cursor
+Route::source('products', ProductSource::class);
+// GET /api/products/snapshot  full data, paged, for the first import and reconciles
+// GET /api/products/changes   what changed after a cursor
 ```
 
 Optionally let the model name its source, then the route can take the model:
 
 ```php
-#[Traceable(source: ClinicSource::class)]
-class Clinic extends Model { use SoftDeletes; }
+#[Traceable(source: ProductSource::class)]
+class Product extends Model { use SoftDeletes; }
 
-Route::source('clinics', Clinic::class);   // same feed as above
+Route::source('products', Product::class);   // same feed as above
 ```
 
 Naming the Source class stays possible, and is the way to publish one model through several feeds with different field lists. A model without `source:` (or one whose source publishes another model) is refused when the route is registered.
@@ -116,7 +116,7 @@ Naming the Source class stays possible, and is the way to publish one model thro
 Write through transactions, so a change and its log row commit or roll back together:
 
 ```php
-DB::transaction(fn () => $clinic->update(['name' => 'Central Clinic']));
+DB::transaction(fn () => $product->update(['name' => 'Blue Mug']));
 ```
 
 ### Remote application
@@ -131,33 +131,33 @@ Declare the receiving model. `SoftDeletes` is required, because Trace only ever 
 ```php
 use Vortech\Trace\Attributes\Sync;
 
-#[Sync(source: 'clinics', mapper: ClinicMapper::class)]
-class Clinic extends Model
+#[Sync(source: 'products', mapper: ProductMapper::class)]
+class Product extends Model
 {
     use SoftDeletes;
 }
 ```
 
-Map the fields (`php artisan trace:make-mapper ClinicMapper`):
+Map the fields (`php artisan trace:make-mapper ProductMapper`):
 
 ```php
 use Vortech\Trace\Mapper;
 
-final class ClinicMapper extends Mapper
+final class ProductMapper extends Mapper
 {
     public function fields(): array
     {
         return [
-            'name',                       // same name on both sides
-            'address',
-            'phone' => 'phone_number',    // remote attribute => local column
+            'name',                // same name on both sides
+            'description',
+            'barcode' => 'ean',    // remote attribute => local column
             'is_active' => 'active',
         ];
     }
 
     public function match(): array
     {
-        return ['code' => 'clinic_code'];   // finds an existing local row before it has a link
+        return ['code' => 'product_code'];   // finds an existing local row before it has a link
     }
 
     public function transform(array $mapped): array   // receives local column names
@@ -172,10 +172,10 @@ Run it:
 ```php
 use Vortech\Trace\Facades\Remote;
 
-$result = Remote::for(Clinic::class)->sync()->run();                        // SyncResult
-Remote::for(Clinic::class)->sync()->dispatch();                             // queued
-Remote::for(Clinic::class)->sync()->onQueue('integrations')->dispatch();
-Remote::for(Clinic::class)->reconcile()->run();                             // full state comparison
+$result = Remote::for(Product::class)->sync()->run();                  // SyncResult
+Remote::for(Product::class)->sync()->dispatch();                       // queued
+Remote::for(Product::class)->sync()->onQueue('integrations')->dispatch();
+Remote::for(Product::class)->reconcile()->run();                       // full state comparison
 
 $result->created; $result->updated; $result->unchanged; $result->deleted; $result->restored;
 $result->durationMs; $result->cursor;
@@ -191,29 +191,35 @@ One synchronous wildcard listener sees `created`, `updated`, `deleted` and `rest
 
 The log stores only the key and `changed` / `deleted`. The API answers with the **current state** of the record, or a `delete` tombstone when it is gone. This is a state-convergence feed, not an event replay: a key may appear more than once in a response and the remote applies it idempotently. A restore is an `upsert`. A force delete fires `deleted` first and is logged exactly once.
 
+### Stable model names
+
+`model_type` holds the model's morph class: the class name, or your morph map alias. To keep the log valid when a class is renamed or moved, give the model an alias (on the source with `#[Traceable]`, on the remote with `#[Sync]`):
+
+```php
+#[Traceable(source: ProductSource::class, alias: 'product')]
+#[Sync(source: 'products', mapper: ProductMapper::class, alias: 'product')]
+```
+
+Choose it before the first change is logged or the first sync runs: rows stored under another name are not found under the new one (update the `model_type` columns if you must change it later).
+
 ### Database capture
 
 Model events miss every write that does not go through a model. Mark the model with `CaptureMode::Database` and the database writes the change log itself:
 
 ```php
-use Vortech\Trace\Attributes\Traceable;
-use Vortech\Trace\Enums\CaptureMode;
-
-#[Traceable(source: ClinicSource::class, capture: CaptureMode::Database)]
-class Clinic extends Model { use SoftDeletes; }
+#[Traceable(source: ProductSource::class, capture: CaptureMode::Database)]
+class Product extends Model { use SoftDeletes; }
 ```
 
 ```bash
 php artisan trace:triggers install     # also: remove, status, --sql to print the statements
 ```
 
-The triggers do what the listener does: lock the `trace_streams` row, bump the version, insert the change, all inside the transaction of the write. The log, the commit order, the API and the remote are unchanged, and a model captured by triggers is skipped by the Eloquent listener, so nothing is logged twice. A soft delete (filling `deleted_at`) is logged as `deleted`, a restore as `changed`.
+The triggers do what the listener does (lock the `trace_streams` row, bump the version, insert the change) inside the transaction of the write, so the log, the commit order, the API and the remote are unchanged. A model captured by triggers is skipped by the listener, so nothing is logged twice. A soft delete is logged as `deleted`, a restore as `changed`.
 
-- Supported on MySQL, MariaDB, PostgreSQL and SQLite. The model must use the connection of the trace tables.
-- Installing needs the `TRIGGER` privilege (MySQL with binary logging also `SUPER`, or `log_bin_trust_function_creators=1`). `--sql` prints the statements, e.g. for a migration your DBA runs.
-- Run `trace:triggers install` again after you change the table, the key or the soft delete column; `trace:doctor` reports missing and outdated triggers.
-- One capturing model per table. Switching a model back to `CaptureMode::Events` needs `trace:triggers remove --model='App\Models\Clinic'` first (the doctor flags a leftover).
-- Every `UPDATE` statement is logged, even one that sets the same values, which is harmless to the idempotent remote. `TRUNCATE` is not seen by any trigger; run a full reconcile after it.
+- MySQL, MariaDB, PostgreSQL and SQLite; the model must use the connection of the trace tables. Installing needs the `TRIGGER` privilege (MySQL with binary logging also `SUPER` or `log_bin_trust_function_creators=1`); `--sql` prints the statements for a DBA.
+- Run `install` again after you change the table, the key or the soft delete column (`trace:doctor` reports missing and outdated triggers). One capturing model per table; switching back to `CaptureMode::Events` needs `trace:triggers remove --model=...` first.
+- Every `UPDATE` statement is logged, even a no-op (harmless to the idempotent remote). `TRUNCATE` is invisible to triggers: reconcile after it.
 
 ### The protocol
 
@@ -263,17 +269,17 @@ A remote application can pull from more than one source installation. Name the e
 'remote' => [
     'default' => ['url' => env('TRACE_REMOTE_URL'), 'token' => env('TRACE_REMOTE_TOKEN')],
     'connections' => [
-        'hospital' => ['url' => env('HOSPITAL_TRACE_URL'), 'token' => env('HOSPITAL_TRACE_TOKEN')],
+        'logistics' => ['url' => env('LOGISTICS_TRACE_URL'), 'token' => env('LOGISTICS_TRACE_TOKEN')],
     ],
 ],
 ```
 
 ```php
-#[Sync(source: 'clinics', mapper: ClinicMapper::class)]                          // the default source
-class Clinic extends Model { use SoftDeletes; }
+#[Sync(source: 'products', mapper: ProductMapper::class)]                                // the default source
+class Product extends Model { use SoftDeletes; }
 
-#[Sync(source: 'doctors', mapper: DoctorMapper::class, connection: 'hospital')]  // another installation
-class Doctor extends Model { use SoftDeletes; }
+#[Sync(source: 'warehouses', mapper: WarehouseMapper::class, connection: 'logistics')]   // another installation
+class Warehouse extends Model { use SoftDeletes; }
 ```
 
 Every model keeps its own state (cursor, bootstrap position, schema hash), its own run lock and its own `instance_id` check, and links carry the `instance_id`, so identical keys of two sources never mix. Use as many named connections as you need, `Remote::for()` and the commands work the same.
@@ -284,11 +290,12 @@ One model has one source: `#[Sync]` is not repeatable and `Remote::for()` takes 
 
 ```bash
 php artisan trace:install [--source] [--remote] [--force]   # no flag: asks which side
-php artisan trace:make-source ClinicSource
-php artisan trace:make-mapper ClinicMapper
-php artisan trace:sync 'App\Models\Clinic'
-php artisan trace:sync 'App\Models\Clinic' --queue
-php artisan trace:sync 'App\Models\Clinic' --full [--allow-mass-deletion]
+php artisan trace:make-source ProductSource
+php artisan trace:make-mapper ProductMapper
+php artisan trace:sync 'App\Models\Product'
+php artisan trace:sync 'App\Models\Product' --queue
+php artisan trace:sync 'App\Models\Product' --full [--allow-mass-deletion]
+php artisan trace:sync 'App\Models\Product' --dry-run [--full]   # rehearse, write nothing
 php artisan trace:triggers [install|remove|status] [--model=] [--sql]
 php artisan trace:doctor [--offline]
 php artisan trace:prune
@@ -296,13 +303,42 @@ php artisan trace:prune
 
 `trace:doctor` checks the token, tables, source and mapper declarations, the capture triggers, columns, connections, the lock-capable cache, the sync state and, unless `--offline`, the source itself (protocol, `instance_id`, schema hash).
 
+## Dashboard
+
+A small dark dashboard for both sides: the synced models (status, cursor, recent runs), the whole run history, the published feeds (capture mode, triggers, changes per hour, retention) and the `trace:doctor` checks. It is off by default:
+
+```dotenv
+TRACE_DASHBOARD_ENABLED=true
+```
+
+It lives under `/trace` (`trace.dashboard.path` and `.middleware`) and answers `404` everywhere but the `local` environment until you define the gates, for example in `AppServiceProvider`:
+
+```php
+Gate::define('viewTrace', fn (?User $user) => $user?->isAdmin() === true);
+Gate::define('manageTrace', fn (?User $user) => $user?->isAdmin() === true);
+```
+
+`viewTrace` opens it; `manageTrace` also allows **Sync now**, **Reconcile**, a dry run, **Prune now** and **Install triggers**. A sync queues the usual job, unless you tick **Run now, without the queue** (fine for a quick check, a long bootstrap belongs on the queue).
+
+### Dry run
+
+Before the first sync of a table that already holds data, rehearse it (also `Remote::for(...)->sync()->dryRun()->run()` and a checkbox on the dashboard):
+
+```bash
+php artisan trace:sync 'App\Models\Product' --dry-run
+```
+
+The source is read and every record goes through the real code in a transaction that is rolled back. You get how many records would be **created**, **matched** to an existing row through `match()`, updated, deleted or restored, and the error a real run would hit (an ambiguous match, a constraint). Nothing is written, no event fires, the state does not move.
+
+Without a `match()` in the mapper existing rows are never matched and every record becomes a new row (the command warns). A dry run reads the whole feed in one transaction, so try a very large table off peak hours, and it cannot be queued.
+
 ### Scheduling
 
 ```php
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::call(fn () => Remote::for(Clinic::class)->sync()->dispatch())->everyFiveMinutes();
-Schedule::call(fn () => Remote::for(Clinic::class)->reconcile()->dispatch())->weekly();
+Schedule::call(fn () => Remote::for(Product::class)->sync()->dispatch())->everyFiveMinutes();
+Schedule::call(fn () => Remote::for(Product::class)->reconcile()->dispatch())->weekly();
 Schedule::command('trace:prune')->daily();   // on the source
 ```
 
@@ -320,9 +356,10 @@ Schedule::command('trace:prune')->daily();   // on the source
 | `source.snapshot_cursor_ttl` | Minutes a snapshot cursor stays valid |
 | `source.forbidden_fields` | Fields no Source may publish |
 | `remote.default` | `url` and `token` of the default source |
-| `remote.connections` | Named sources for `#[Sync(connection: 'hospital')]`, see [Multiple sources](#multiple-sources) |
+| `remote.connections` | Named sources for `#[Sync(connection: 'logistics')]`, see [Multiple sources](#multiple-sources) |
 | `remote.models` | Extra models for `trace:doctor` |
 | `remote.timeout`, `retries`, `queue`, `lock_ttl`, `runs_retention_days` | HTTP and queue behaviour |
+| `dashboard` | `enabled`, `path` and `middleware` of the [dashboard](#dashboard) |
 | `safety` | `require_soft_deletes`, `max_missing_deletion_ratio`, `min_records_for_ratio_guard` |
 
 The source signs its cursors with `app.key`, so that key must be set there. `remote.default.url` is the base URL of the source's API prefix; Trace appends the feed and the endpoint. Production requires HTTPS.
@@ -330,15 +367,6 @@ The source signs its cursors with `app.key`, so that key must be set there. `rem
 ## Events
 
 `SyncStarted`, `SyncCompleted` and `SyncFailed` carry the `TraceSyncRun` (and the `SyncResult` or the exception). The logs `trace.sync.completed` and `trace.sync.failed` contain counters and identifiers, never record values.
-
-## Enums
-
-Every enum (`Operation`, `ChangeType`, `SyncMode`, `SyncStatus`, `RunStatus`, `CursorType`) has `is()`, `isNot()`, `in()` and `notIn()`:
-
-```php
-$state->status->is(SyncStatus::Ready);
-$state->status->in(SyncStatus::Failed, SyncStatus::ReconcileRequired);
-```
 
 ## Good to know
 
@@ -354,16 +382,6 @@ $state->status->in(SyncStatus::Failed, SyncStatus::ReconcileRequired);
 - **Retention.** Keep `retention_days` longer than your longest bootstrap and the longest pause between syncs.
 - **Deploys.** The listener also logs writes from queue workers, CLI and cron. Restart long-running workers on the source after a deployment.
 - **Page size and memory.** A page is applied in one transaction, keep `page_size` reasonable for wide tables.
-
-## Future ideas
-
-Not available yet, and not promised, but candidates for later releases:
-
-- Relation support: mapping remote foreign keys to local ones (today only scalar columns are mapped)
-- Composite primary keys
-- Two-way synchronization with conflict handling
-- A dashboard
-- A generic adapter for arbitrary remote APIs
 
 ## Testing
 
@@ -391,7 +409,7 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 
-If you discover a security issue, please email [mate@vortech.hu](mailto:mate@vortech.hu) instead of using the issue tracker.
+If you discover a security issue, please slug [mate@vortech.hu](mailto:mate@vortech.hu) instead of using the issue tracker.
 
 ## Credits
 

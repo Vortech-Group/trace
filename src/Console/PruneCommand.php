@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 use Vortech\Trace\Models\TraceChange;
+use Vortech\Trace\Models\TraceMeta;
 use Vortech\Trace\Models\TraceStream;
 use Vortech\Trace\Models\TraceSyncRun;
 use Vortech\Trace\Support\TraceConfig;
@@ -49,6 +50,11 @@ final class PruneCommand extends Command
 
         if (Schema::connection(TraceConfig::connection())->hasTable('trace_sync_runs')) {
             $runs = TraceSyncRun::query()->where('created_at', '<', now()->subDays(TraceConfig::runsRetentionDays()))->toBase()->delete();
+        }
+
+        if (Schema::connection(TraceConfig::connection())->hasTable('trace_meta')) {
+            // the dashboard shows when retention last ran
+            TraceMeta::query()->updateOrCreate(['key' => 'prune.last'], ['value' => json_encode(['at' => now()->toIso8601String(), 'changes' => $changes, 'runs' => $runs], JSON_THROW_ON_ERROR)]);
         }
 
         $this->components->info("Pruned {$changes} change log rows and {$runs} sync runs.");

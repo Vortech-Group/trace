@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vortech\Trace\Tracking;
 
 use ReflectionClass;
+use ReflectionException;
 use Vortech\Trace\Attributes\Traceable;
 use Vortech\Trace\Enums\CaptureMode;
 use Vortech\Trace\Source;
@@ -31,6 +32,8 @@ final class TraceableRegistry
      *
      * @param  class-string  $class
      * @return class-string<Source>|null
+     *
+     * @throws ReflectionException
      */
     public function sourceFor(string $class): ?string
     {
@@ -51,6 +54,8 @@ final class TraceableRegistry
      * How the model is captured, null when it is not #[Traceable] at all.
      *
      * @param  class-string  $class
+     *
+     * @throws ReflectionException
      */
     public function captureFor(string $class): ?CaptureMode
     {
@@ -75,6 +80,8 @@ final class TraceableRegistry
 
     /**
      * @param  class-string  $class
+     *
+     * @throws ReflectionException
      */
     private function resolve(string $class): bool
     {
