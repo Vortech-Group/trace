@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-trace` will be documented in this file
 
+## 0.5.0 - 2026-10-16
+
+### Added
+
+- A Laravel Boost guideline and a `trace-development` skill ship with the package (`resources/boost`), so AI agents working in an application that uses `laravel-trace` pick up how to declare traceable models, write mappers and run syncs
+
 ## 0.4.1 - 2026-10-13
 
 ### Changed
