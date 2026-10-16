@@ -2,13 +2,7 @@
 
 All notable changes to `laravel-trace` will be documented in this file
 
-## 0.5.1 - 2026-10-16
-
-### Fixed
-
-- The changelog gained the missing 0.5.0 section, which the release workflow needs to publish the release notes. There are no code changes since 0.5.0
-
-## 0.5.0 - 2026-10-16
+## 0.5.2 - 2026-10-16
 
 ### Added
 
